@@ -1,9 +1,9 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { StyleSheet } from 'react-native';
 import StopWatch from '../../components/timer/stopwatch';
 
 import EditScreenInfo from '../../components/EditScreenInfo';
 import { Text, View } from '../../components/Themed';
+import Timer from '../../components/timer/timer';
 
 export default function TabTwoScreen() {
   return (
