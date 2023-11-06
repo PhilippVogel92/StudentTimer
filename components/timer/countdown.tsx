@@ -87,7 +87,7 @@ class CountdownTimer extends Component {
                             value={this.state.inputTime}
                         />
                         <TouchableOpacity style={styles.startButton} onPress={this.handleStartCountdown}>
-                            <Text>Start</Text>
+                            <Text>Set Timer</Text>
                         </TouchableOpacity>
                     </>
                 )}
