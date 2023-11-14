@@ -1,10 +1,13 @@
 import React, { useState, Fragment } from 'react';
 import { Octicons, Ionicons } from '@expo/vector-icons';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { onboardingData } from './onboardingItems';
 
+
 export default function OnboardingScreen() {
+    const { width } = useWindowDimensions();
+
     const [activeIndex, setActiveIndex] = useState(0);
     const navigation = useNavigation();
 
@@ -72,6 +75,7 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
+        justifyContent: 'center',
     },
     buttonContainer: {
         flexDirection: 'row',

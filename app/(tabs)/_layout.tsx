@@ -46,17 +46,25 @@ export default function TabLayout() {
       <Tabs.Screen
         name="two"
         options={{
-          title: 'Tab Two',
+          title: 'SwipeLib',
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
         }}
       />
       <Tabs.Screen
         name="onboarding"
         options={{
-          title: 'Onboarding',
+          title: 'Selfmade',
           tabBarIcon: ({ color }) => <TabBarIcon name="info" color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="four"
+        options={{
+          title: 'SelfmadeFullScreen',
+          tabBarIcon: ({ color }) => <TabBarIcon name="repeat" color={color} />,
+        }}
+      />
     </Tabs>
+
   );
 }
