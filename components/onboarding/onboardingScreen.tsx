@@ -11,7 +11,7 @@ export default function OnboardingScreen() {
     const navigateToHome = () => {
         navigation.reset({
             index: 0,
-            routes: [{ name: "(tabs)" }]
+            routes: [{ name: "(tabs)" as never }] // toDo: das muss irgendwie besser gehen als mit "as never"
         });
     };
 
