@@ -1,15 +1,17 @@
 import { LearningUnitType } from "./LearningUnitType";
+import { LearningSessionType } from "./learningSessionType";
 
 export type ModuleType = {
-  moduleId: string;
+  id: number;
   name: string;
   colorCode: string;
-  creditpoints: number;
+  creditPoints: number;
   examDate: Date;
   learningUnits: LearningUnitType[];
+  learningSessions: LearningSessionType[];
 
-  /**
-   * Adds up the workload of each learning unit within the module
-   */
-  timeInvested?: number;
+  totalModuleTime: number;
+  totalLearningTime: number;
+  totalLearningSessionTime: number;
+  totalLearningUnitTime: number;
 };
