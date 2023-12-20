@@ -30,7 +30,7 @@ public class AppleTokenVerifier {
         Algorithm algorithm = Algorithm.RSA256(publicKey);
         JWTVerifier verifier = JWT.require(algorithm)
                 .withIssuer("https://appleid.apple.com")
-                .withAudience("host.exp.Exponent")
+                .withAudience("com.studenttimer.studenttimetracker")
                 .withSubject(userSecret)
                 .build();
         try {
