@@ -1,6 +1,7 @@
 import Button from "@/components/Button";
 import { LearningUnitForm } from "@/components/modules/LearningUnitForm";
-import { COLORTHEME } from "@/constants/Theme";
+import { LearningUnitEnum } from "@/constants/LearningUnitEnum";
+import { BASE_STYLES, COLORTHEME } from "@/constants/Theme";
 import { useAuth } from "@/context/AuthContext";
 import { useAxios } from "@/context/AxiosContext";
 import { useModules } from "@/context/ModuleContext";
@@ -22,19 +23,37 @@ export default function NewModuleLearningUnits() {
     name: string;
     colorCode: string;
     creditPoints: string;
-    examDate: string;
+    examDate?: string;
   }>();
 
-  const [error, setError] = useState("");
+  const [validationError, setValidationError] = useState(true);
 
   const toast = useToast();
   const { authState } = useAuth();
   const { authAxios } = useAxios();
   const { fetchModules } = useModules();
 
-  const [learningUnits, setLearningUnits] = useState<LearningUnitType[]>([]);
+  const [learningUnits, setLearningUnits] = useState<LearningUnitType[]>([
+    {
+      id: Math.random(),
+      name: LearningUnitEnum.VORLESUNG,
+      workloadPerWeek: 0,
+      startDate: new Date(),
+      endDate: new Date(),
+      totalLearningTime: 0,
+    },
+  ]);
 
   const router = useRouter();
+
+  const onLearningUnitChange = (changedUnit: LearningUnitType) => {
+    setLearningUnits((prevLearningUnits) => {
+      const newlearningUnits = prevLearningUnits.map((current) => {
+        return current.id === changedUnit.id ? changedUnit : current;
+      });
+      return newlearningUnits;
+    });
+  };
 
   const onDeleteLearningUnit = (id: number) => {
     if (learningUnits.length > 1)
@@ -47,7 +66,7 @@ export default function NewModuleLearningUnits() {
     setLearningUnits((prevLearningUnits) => {
       const newlearningUnit = {
         id: Math.random(),
-        name: "",
+        name: LearningUnitEnum.VORLESUNG,
         workloadPerWeek: 0,
         startDate: new Date(),
         endDate: new Date(),
@@ -58,28 +77,42 @@ export default function NewModuleLearningUnits() {
   };
 
   const onCreateModule = async () => {
+    if (validationError) return;
+
     let id = toast.show("Erstellen...");
     let response;
     try {
-      response = await authAxios?.post(
-        `/students/${authState?.user.id}/modules`,
-        {
+      let moduleDTO;
+      if (examDate) {
+        moduleDTO = {
           name: name,
           examDate: examDate,
           colorCode: colorCode,
           creditpoints: +creditPoints,
-        }
-      );
-      const createdModule: ModuleType | undefined = response?.data;
+        };
+      } else {
+        moduleDTO = {
+          name: name,
+          colorCode: colorCode,
+          creditpoints: +creditPoints,
+        };
+      }
 
+      response = await authAxios?.post(
+        `/students/${authState?.user.id}/modules`,
+        moduleDTO
+      );
+
+      const createdModule: ModuleType | undefined = response?.data;
       learningUnits.forEach(async (unit) => {
+        // Multiply workloadPerWeek with 60 (minutes per hour) as the input is given in hours but the backend expects minutes
         await authAxios?.post(
           `/students/${authState?.user.id}/modules/${createdModule?.id}/learningUnits`,
           {
             name: unit.name,
-            startDate: unit.startDate.toISOString().replace("Z", ""),
-            endDate: unit.endDate.toISOString().replace("Z", ""),
-            workloadPerWeek: unit.workloadPerWeek,
+            startDate: unit.startDate.toISOString().substring(0, 10),
+            endDate: unit.endDate.toISOString().substring(0, 10),
+            workloadPerWeek: unit.workloadPerWeek * 60,
           }
         );
       });
@@ -103,28 +136,18 @@ export default function NewModuleLearningUnits() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
+      style={{ flex: 1, backgroundColor: COLORTHEME.light.background }}
     >
       <ScrollView
         style={styles.scrollViewContainer}
         contentContainerStyle={styles.scrollViewContainerStyle}
       >
-        {/* <FlatList
-          data={learningUnits}
-          renderItem={({ item }) => (
-            <LearningUnitForm
-              inputData={item}
-              onDelete={onDeleteLearningUnit}
-            />
-          )}
-          keyExtractor={(item: LearningUnitType) => item.id.toString()}
-          contentContainerStyle={{ gap: 12 }}
-          style={{ width: "100%" }}
-        ></FlatList> */}
         {learningUnits.map((unit) => (
           <LearningUnitForm
             inputData={unit}
             onDelete={onDeleteLearningUnit}
+            onChange={onLearningUnitChange}
+            setValidationErrorCallback={setValidationError}
             key={unit.id}
           />
         ))}
@@ -142,6 +165,7 @@ export default function NewModuleLearningUnits() {
             textColor={COLORTHEME.light.grey2}
             onPress={onCreateModule}
             style={{ width: 200 }}
+            disabled={validationError}
           />
         </View>
       </ScrollView>
@@ -152,8 +176,8 @@ export default function NewModuleLearningUnits() {
 const styles = StyleSheet.create({
   scrollViewContainer: {
     flexDirection: "column",
-    padding: 24,
     gap: 24,
+    borderRadius: BASE_STYLES.borderRadius,
   },
   scrollViewContainerStyle: {
     alignItems: "center",
@@ -165,6 +189,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 15,
     paddingBottom: 46,
-    backgroundColor: "transparent",
   },
 });

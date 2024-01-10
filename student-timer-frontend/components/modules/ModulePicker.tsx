@@ -35,12 +35,8 @@ export default function ModulePicker(props: {
         <Picker
           style={{
             viewContainer: styles.picker,
-            inputWeb: { ...styles.picker, color: selectedModule.colorCode },
-            inputAndroid: { color: selectedModule.colorCode },
-            inputIOS: {
-              color: selectedModule.colorCode,
-              paddingHorizontal: 10,
-            },
+            inputWeb: { ...styles.picker },
+            inputIOS: { paddingHorizontal: 10 },
           }}
           placeholder={{}}
           value={selectedModuleId}
@@ -51,13 +47,11 @@ export default function ModulePicker(props: {
                     key: module.id,
                     label: module.name,
                     value: module.id,
-                    color: module.colorCode,
                   } as Item;
                 })
               : []
           }
-          onValueChange={(moduleIdString: string) => {
-            let moduleId = Number(moduleIdString);
+          onValueChange={(moduleId: number) => {
             setSelectedModuleId(moduleId);
             let module = modules?.find((module) => module.id === moduleId);
             if (!module) return;

@@ -6,14 +6,14 @@ import com.github.philippvogel92.studenttimerbackend.module.ModuleRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
-@Component
+@Service
 public class LearningSessionService {
     private final ModuleRepository moduleRepository;
     private final LearningSessionRepository learningSessionRepository;
@@ -46,10 +46,9 @@ public class LearningSessionService {
         String description = learningSessionCreateDTO.getDescription();
         Integer focusDuration = learningSessionCreateDTO.getFocusDuration();
         Integer totalDuration = learningSessionCreateDTO.getTotalDuration();
-        LocalDateTime createdAt = learningSessionCreateDTO.getCreatedAt();
         Integer rating = learningSessionCreateDTO.getRating();
 
-        LearningSession learningSession = new LearningSession(totalDuration, focusDuration, rating, createdAt,
+        LearningSession learningSession = new LearningSession(totalDuration, focusDuration, rating, LocalDateTime.now(),
                 description, module);
 
         return learningSessionRepository.save(learningSession);
@@ -58,10 +57,14 @@ public class LearningSessionService {
     public void deleteLearningSession(Long moduleId, Long learningSessionId) {
         LearningSession learningSession =
                 learningSessionRepository.findById(learningSessionId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Learning Session doesn't exists"));
-        if (!Objects.equals(learningSession.getModule().getId(), moduleId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Learning Session does not belong to the module");
+        Module module =
+                moduleRepository.findById(moduleId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Module not found"));
+
+        boolean isLearningSessionRemoved = module.getLearningSessions().remove(learningSession);
+        if (!isLearningSessionRemoved) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Learning Session not found in module");
         }
-        learningSessionRepository.delete(learningSession);
+        moduleRepository.save(module);
     }
 
     @Transactional
@@ -77,7 +80,7 @@ public class LearningSessionService {
         learningSession.setTotalDuration(learningSessionCreateDTO.getTotalDuration());
         learningSession.setFocusDuration(learningSessionCreateDTO.getFocusDuration());
         learningSession.setRating(learningSessionCreateDTO.getRating());
-        learningSession.setCreatedAt(learningSessionCreateDTO.getCreatedAt());
+        learningSession.setUpdatedAt(LocalDateTime.now());
         learningSession.setDescription(learningSessionCreateDTO.getDescription());
 
         return learningSession;

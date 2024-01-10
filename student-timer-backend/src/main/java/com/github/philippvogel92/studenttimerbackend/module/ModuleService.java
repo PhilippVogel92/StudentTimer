@@ -5,16 +5,15 @@ import com.github.philippvogel92.studenttimerbackend.student.Student;
 import com.github.philippvogel92.studenttimerbackend.student.StudentRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cglib.core.Local;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 
-@Component
+@Service
 public class ModuleService {
     private final ModuleRepository moduleRepository;
     private final StudentRepository studentRepository;
@@ -29,7 +28,7 @@ public class ModuleService {
     public List<Module> getAllModulesForStudent(Long studentId) {
         Student student =
                 studentRepository.findById(studentId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found"));
-        return student.getModules();
+        return moduleRepository.findModulesByStudentOrderByName(student);
     }
 
     public Module getModule(Long studentId, Long moduleId) {
@@ -38,7 +37,7 @@ public class ModuleService {
         if (!Objects.equals(module.getStudent().getId(), studentId)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Module does not belong to the student");
         }
-        
+
         return module;
     }
 

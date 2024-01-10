@@ -8,6 +8,7 @@ import {
 import { API_URL, TOKEN_KEY } from "@/constants/Api";
 import { useRouter } from "expo-router";
 import { AuthStateType, TokenType, UserType } from "@/types/AuthType";
+import { useToast } from "react-native-toast-notifications";
 
 type AuthProps = {
   authState?: AuthStateType;
@@ -25,12 +26,26 @@ type AuthProps = {
     idToken?: string,
     userSecret?: string,
     name?: string,
-    provider?: string
+    provider?: LOGIN_PROVIDER
   ) => Promise<any>;
   onLogout?: () => Promise<any>;
+  onUpdate?: (
+    userName: string,
+    userStudyCourse: string,
+    userEmail: string
+  ) => Promise<any>;
+  onChangePassword?: (
+    newPassword: string,
+    newPassword2: string
+  ) => Promise<any>;
+  onRemove?: (userId: number) => Promise<any>;
   onNewToken?: (token: TokenType) => Promise<any>;
 };
 
+export enum LOGIN_PROVIDER {
+  GOOGLE = "GOOGLE",
+  APPLE = "APPLE",
+}
 const USER_KEY = "user";
 const AuthContext = createContext<AuthProps>({});
 
@@ -61,9 +76,14 @@ export const AuthProvider = ({ children }: any) => {
       const userString = await getStoredItem(USER_KEY);
       if (userString) user = JSON.parse(userString);
 
+      //toDo: how to make reload with data of logged in user possible?
       if (token.accessToken && user.id) {
         setAuthState({ token: token, authenticated: true, user: user });
       } else {
+        // toDo: Clear user data if the token or user ID is missing: could have been deleted or logged out
+        //await deleteStoredItem(TOKEN_KEY);
+        //await deleteStoredItem(USER_KEY);
+
         setAuthState({
           token: { accessToken: null, refreshToken: null, tokenType: null },
           authenticated: false,
@@ -133,13 +153,13 @@ export const AuthProvider = ({ children }: any) => {
     idToken?: string,
     userSecret?: string,
     name?: string,
-    provider?: string
+    provider?: LOGIN_PROVIDER
   ) => {
     try {
       console.log(`Provider: ${provider}`);
       let result = null;
       switch (provider) {
-        case "GOOGLE":
+        case LOGIN_PROVIDER.GOOGLE:
           console.log(`GOOGLE: ${email}, ${idToken}`);
           result = await axios.post(`${API_URL}/auth/login/oauth2`, {
             email,
@@ -149,14 +169,17 @@ export const AuthProvider = ({ children }: any) => {
           console.log(`GOOGLE: ${JSON.stringify(result, null, 2)}`);
           break;
 
-        case "APPLE":
+        case LOGIN_PROVIDER.APPLE:
+          console.log(`APPLE: ${email}, ${idToken}, ${userSecret}, ${name}`);
           result = await axios.post(`${API_URL}/auth/login/oauth2`, {
             email,
-            tokenId: idToken,
             userSecret,
             name,
+            tokenId: idToken,
             provider,
           });
+
+          console.log(`APPLE: ${JSON.stringify(result, null, 2)}`);
           break;
 
         default:
@@ -199,9 +222,94 @@ export const AuthProvider = ({ children }: any) => {
     }
   };
 
+  const update = async (
+    userName: string,
+    userStudyCourse: string,
+    userEmail: string
+  ) => {
+    try {
+      const result = await axios.put(
+        `${API_URL}/students/${authState.user.id}`,
+        {
+          name: userName,
+          studyCourse: userStudyCourse,
+          email: userEmail,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${authState.token.accessToken}`,
+          },
+        }
+      );
+
+      const user = {
+        ...authState.user,
+        name: userName,
+        studyCourse: userStudyCourse,
+        email: userEmail,
+      } as UserType;
+
+      setAuthState({
+        token: authState.token,
+        authenticated: true,
+        user: user,
+      });
+
+      await saveItem(USER_KEY, JSON.stringify(user));
+
+      return result;
+    } catch (e) {
+      return { error: true, msg: (e as any).response.data.message };
+    }
+  };
+
+  const changePassword = async (newPassword: string, newPassword2: string) => {
+    try {
+      const result = await axios.put(
+        `${API_URL}/students/${authState.user.id}`,
+        {
+          name: authState.user.name,
+          studyCourse: authState.user.studyCourse,
+          email: authState.user.email,
+          password: newPassword,
+          password2: newPassword2,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${authState.token.accessToken}`,
+          },
+        }
+      );
+
+      return result;
+    } catch (e) {
+      return { error: true, msg: (e as any).response.data.message };
+    }
+  };
+
+  const remove = async (userId: number) => {
+    try {
+      const result = await axios.delete(`${API_URL}/students/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${authState.token.accessToken}`,
+        },
+      });
+
+      await deleteStoredItem(TOKEN_KEY);
+      await deleteStoredItem(USER_KEY);
+
+      return result;
+    } catch (e) {
+      return { error: true, msg: (e as any).response.data.message };
+    }
+  };
+
   const router = useRouter();
 
+  const toast = useToast();
+
   const logout = async () => {
+    let id = toast.show("Logout...", { type: "loading" });
     await deleteStoredItem(TOKEN_KEY);
     await deleteStoredItem(USER_KEY);
 
@@ -216,8 +324,8 @@ export const AuthProvider = ({ children }: any) => {
         email: null,
       },
     });
-
-    router.push("/(auth)/login");
+    toast.update(id, "Logout erfolgreich", { type: "success" }); //toDo update funktioniert nicht?
+    router.replace("/(auth)/login");
   };
 
   const newToken = async (token: TokenType) => {
@@ -233,6 +341,9 @@ export const AuthProvider = ({ children }: any) => {
     onRegister: register,
     onLogin: login,
     onLogout: logout,
+    onUpdate: update,
+    onRemove: remove,
+    onChangePassword: changePassword,
     onNewToken: newToken,
     authState,
   };

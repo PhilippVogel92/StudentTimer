@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet } from "react-native";
 
 import { View } from "@/components/Themed";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -12,6 +12,12 @@ import { useModules } from "@/context/ModuleContext";
 import { useState } from "react";
 import React from "react";
 import { convertMinutesToHours } from "@/libs/timeHelper";
+import { LearningUnitEnum } from "@/constants/LearningUnitEnum";
+import { StarIcon, Pencil, Trash2 } from "lucide-react-native";
+import { FlatList } from "react-native-gesture-handler";
+import { useToast } from "react-native-toast-notifications";
+import { useAuth } from "@/context/AuthContext";
+import { useAxios } from "@/context/AxiosContext";
 
 export default function ModulesDetailScreen() {
   const { id } = useLocalSearchParams<{
@@ -20,6 +26,10 @@ export default function ModulesDetailScreen() {
 
   const router = useRouter();
   const { modules } = useModules();
+  const toast = useToast();
+  const { authState } = useAuth();
+  const { authAxios } = useAxios();
+  const { fetchModules } = useModules();
 
   // TODO?
   const isLoading = false;
@@ -36,7 +46,6 @@ export default function ModulesDetailScreen() {
       }
     }
 
-    // setModuleError(true);
     return {
       id: -1,
       name: "Placeholder",
@@ -55,12 +64,48 @@ export default function ModulesDetailScreen() {
   const [moduleError, setModuleError] = useState(false);
   const [detailModule] = useState<ModuleType>(fetchDetailModule());
 
-  const computeUnitString = (unit: LearningUnitType) => {
+  const computeModuleDetailUnitString = (unit: LearningUnitType) => {
     let weekAmount = computeDateDifference(unit.endDate, unit.startDate, true);
 
     return `${convertMinutesToHours(
       unit.workloadPerWeek
     )} Std., ${weekAmount} Wochen`;
+  };
+
+  const onDelete = (trackingSessionId: number) => {
+    Alert.alert(
+      "Tracking wirklich löschen?",
+      "Möchtest du das Tracking wirklich unwiederuflich löschen?",
+      [
+        {
+          text: "Abbrechen",
+          style: "cancel",
+        },
+        {
+          text: "Löschen",
+          onPress: () => {
+            deleteLearningSession(trackingSessionId);
+          },
+          style: "destructive",
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
+  const deleteLearningSession = async (trackingSessionId: number) => {
+    let id = toast.show("Löschen...", { type: "loading" });
+    try {
+      await authAxios?.delete(
+        `/students/${authState?.user.id}/modules/${detailModule.id}/learningSessions/${trackingSessionId}`
+      );
+      toast.update(id, "Tracking erfolgreich gelöscht", { type: "success" });
+      fetchModules && (await fetchModules());
+    } catch (e) {
+      toast.update(id, `Fehler beim Löschen des Trackings: ${e}`, {
+        type: "danger",
+      });
+    }
   };
 
   return (
@@ -93,9 +138,9 @@ export default function ModulesDetailScreen() {
             <View style={styles.unitWrapper}>
               <H2 style={{ textAlign: "left" }}>Einheiten</H2>
               <View>
-                {detailModule?.learningUnits.map((unit) => {
+                {detailModule?.learningUnits.map((unit: LearningUnitType) => {
                   return (
-                    <View key={unit.id} style={styles.unitRowWrapper}>
+                    <View key={unit.id}>
                       <View style={styles.unitRow}>
                         <View
                           style={[
@@ -105,7 +150,14 @@ export default function ModulesDetailScreen() {
                         />
                         <View style={styles.unitRowTitle}>
                           <Subhead>{unit.name}</Subhead>
-                          <P>{computeUnitString(unit)}</P>
+                          <P>
+                            {unit.name === LearningUnitEnum.SELBSTSTUDIUM
+                              ? `${convertMinutesToHours(
+                                  detailModule.totalModuleTime -
+                                    detailModule.totalLearningTime
+                                )} Std. verbleibend`
+                              : computeModuleDetailUnitString(unit)}
+                          </P>
                         </View>
                         <Subhead>
                           {convertMinutesToHours(unit.totalLearningTime)} Std.
@@ -128,6 +180,64 @@ export default function ModulesDetailScreen() {
                 </Subhead>
               </View>
             </View>
+            <View style={styles.unitWrapper}>
+              <H2 style={{ textAlign: "left" }}>Vergangene Trackings</H2>
+              <FlatList
+                data={detailModule?.learningSessions}
+                scrollEnabled={false}
+                renderItem={({ item }) => {
+                  return (
+                    <View key={item.id}>
+                      <View style={styles.unitRow}>
+                        <View
+                          style={[
+                            styles.moduleIndicatorM,
+                            { backgroundColor: detailModule.colorCode },
+                          ]}
+                        />
+                        <View style={styles.unitRowTitle}>
+                          <Subhead>
+                            {item.createdAt.toLocaleDateString("de-DE")}
+                          </Subhead>
+                          <P numberOfLines={2} style={{ textAlign: "left" }}>
+                            {item.description}
+                          </P>
+                        </View>
+                        <Subhead>
+                          {convertMinutesToHours(item.totalDuration)} Std.
+                        </Subhead>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Subhead>{item.rating}</Subhead>
+                          <StarIcon
+                            color=""
+                            fill={COLORTHEME.light.text}
+                            size={20}
+                          />
+                        </View>
+                        <Pressable
+                          onPress={() =>
+                            router.push({
+                              pathname: `modules/${detailModule.id}/learningSessions/${item.id}/edit`,
+                            } as never)
+                          }
+                        >
+                          <Pencil name="pencil" size={18} color="black" />
+                        </Pressable>
+                        <Pressable onPress={() => onDelete(item.id)}>
+                          <Trash2 size={18} name="trash2" color="red" />
+                        </Pressable>
+                      </View>
+                    </View>
+                  );
+                }}
+              />
+            </View>
           </ScrollView>
         </View>
       )}
@@ -137,15 +247,17 @@ export default function ModulesDetailScreen() {
 
 const styles = StyleSheet.create({
   outerWrapper: {
-    paddingVertical: 30,
-    height: "100%",
+    flex: 1,
+    paddingVertical: 50,
+    justifyContent: "space-around",
+    backgroundColor: COLORTHEME.light.background,
   },
   scrollViewContainerStyle: {
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "space-between",
     padding: 24,
-    gap: 16,
+    gap: 30,
   },
   chartWrapper: {
     width: "100%",
@@ -154,19 +266,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   unitWrapper: {
-    flex: 1,
+    width: "100%",
     flexDirection: "column",
     justifyContent: "flex-start",
-  },
-  unitRowWrapper: {
-    flexDirection: "column",
-    justifyContent: "flex-start",
+    gap: 16,
   },
   unitRow: {
     width: "100%",
     flexDirection: "row",
-    justifyContent: "space-evenly",
+    justifyContent: "space-between",
     alignItems: "center",
+    gap: 12,
   },
   moduleIndicatorM: {
     width: 24,

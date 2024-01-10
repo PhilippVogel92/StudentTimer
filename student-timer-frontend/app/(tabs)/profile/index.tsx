@@ -1,38 +1,46 @@
 import React from "react";
-import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, Image, StyleSheet } from "react-native";
 import Button from "@/components/Button";
-import { COLORTHEME } from "@/constants/Theme";
+import Pressable from "@/components/Pressable";
+import { BASE_STYLES, COLORTHEME } from "@/constants/Theme";
 import { User2 } from "lucide-react-native";
-import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { deleteStoredItem } from "@/libs/deviceStorage";
+import { router } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Profile() {
   const { onLogout, authState } = useAuth();
 
-  const pic = require("../../assets/images/profile-picture.jpg");
+  const images: { [key: string]: any } = {
+    "phil.jpg": require("../../../assets/images/profile/phil.jpg"),
+    "mareike.jpg": require("../../../assets/images/profile/mareike.jpg"),
+    "carlo.jpg": require("../../../assets/images/profile/carlo.jpg"),
+    "nils.png": require("../../../assets/images/profile/nils.png"),
+    "konstantin.png": require("../../../assets/images/profile/konstantin.png"),
+    "": require("../../../assets/images/profile/profile-picture.jpg"),
+    "default.jpg": require("../../../assets/images/profile/profile-picture.jpg"),
+  };
 
-  // Daten aus Authentifizierung / Benutzersession ziehen
+  const defaultPic = require("../../../assets/images/profile/profile-picture.jpg");
+  //const pic = require("../../../assets/images/profile/phil.jpg");
+
+  // toDo: Bildabfrage ermöglichen statt defaultPic
   const user = {
     name: authState?.user.name,
     studySubject: authState?.user.studyCourse,
-    profileImage: pic,
+    profileImage: defaultPic,
+    //profileImage: authState?.user.profilePicture,
+    //profileImage: authState?.user.profilePicture in images ? images[authState?.user.profilePicture] : images["default.jpg"],
   };
 
   const handleEditProfile = () => {
-    // Hier implementiere die Logik für die Profilbearbeitung
+    router.push("/profile/edit/");
     console.log("Profil bearbeiten");
-  };
-
-  const handleExportData = () => {
-    // Hier implementiere die Logik für den Datenexport
-    console.log("Daten exportieren");
   };
 
   return (
     <View style={styles.container}>
       {/* Profilbild */}
+
       <View style={styles.profileImageContainer}>
         {user.profileImage ? (
           <Image source={user.profileImage} style={styles.profileImage} />
@@ -53,16 +61,12 @@ export default function Profile() {
           textColor="#FFFFFF"
           onPress={handleEditProfile}
         />
-        <Button
-          text="Daten exportieren"
-          backgroundColor={COLORTHEME.light.primary}
-          textColor="#FFFFFF"
-          onPress={handleExportData}
-        />
-        <Button
-          text="Logout"
-          backgroundColor={COLORTHEME.light.primary}
-          textColor="#FFFFFF"
+      </View>
+      <View>
+        <Pressable
+          text={"Logout"}
+          accessibilityLabel={"Logout"}
+          accessibilityRole={"button"}
           onPress={onLogout}
         />
       </View>
@@ -76,6 +80,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: COLORTHEME.light.background,
+    paddingVertical: BASE_STYLES.horizontalPadding,
   },
   profileImageContainer: {
     width: 120,
@@ -90,6 +95,8 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
+    borderColor: COLORTHEME.light.primary,
+    borderWidth: 5,
   },
   title: {
     fontSize: 24,

@@ -13,13 +13,18 @@ const COLORS = {
   // tertiary: "#000000",
   warning: "#D16E6E",
   success: "#51C93E",
+  danger: "#D32F2F",
   rating: "#D0D400",
   // Module units
-  Vorlesung: "#F9D477",
-  Praktikum: "#6FB9E2",
-  Nachhilfe: "#D16E6E",
-  Seminar: "#58CEB9",
-  Projekttreffen: "#95E988",
+  VORLESUNG: "#F9D477",
+  PRAKTIKUM: "#6FB9E2",
+  PROJEKT: "#D16E6E",
+  MEETING: "#58CEB9",
+  SEMINAR: "#95E988",
+  ÜBUNG: "#88A795",
+  NACHHILFE: "#AB5761",
+  TUTORIUM: "#5D7CB9",
+  EXKURSION: "#FBC2B5",
   // selectable course colors
   course1: "#88A795",
   course2: "#AB5761",
@@ -64,4 +69,9 @@ const COLORTHEME = {
   },
 };
 
-export { COLORTHEME, COLORS, SIZES };
+const BASE_STYLES = {
+  horizontalPadding: 16,
+  borderRadius: 12,
+};
+
+export { COLORTHEME, COLORS, SIZES, BASE_STYLES };

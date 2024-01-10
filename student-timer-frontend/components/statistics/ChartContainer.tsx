@@ -1,7 +1,7 @@
 import { View } from "@/components/Themed";
-import { StyleSheet } from "react-native";
+import { Dimensions, StyleSheet } from "react-native";
 import { H3 } from "@/components/StyledText";
-import { COLORTHEME } from "@/constants/Theme";
+import { BASE_STYLES, COLORTHEME } from "@/constants/Theme";
 
 type Props = {
   children: React.ReactNode;
@@ -12,7 +12,7 @@ export default function ChartContainer({ children, title }: Props) {
   return (
     <View style={styles.container}>
       <H3 style={styles.title}>{title}</H3>
-      {children}
+      <View style={styles.chart}>{children}</View>
     </View>
   );
 }
@@ -25,9 +25,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     padding: "4%",
     gap: 16,
-    minHeight: 280,
+    minHeight: 250,
+    width: Dimensions.get("window").width - BASE_STYLES.horizontalPadding * 2,
   },
   title: {
     textAlign: "left",
+  },
+  chart: {
+    alignSelf: "center",
+    backgroundColor: "transparent",
   },
 });

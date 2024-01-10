@@ -1,18 +1,20 @@
-import { StatusBar } from "expo-status-bar";
-import { Platform, StyleSheet, TextInput } from "react-native";
+import { StyleSheet } from "react-native";
 
 import { Text, View } from "@/components/Themed";
 import { COLORTHEME } from "@/constants/Theme";
 import { useState } from "react";
 import Button from "@/components/Button";
-import Header from "@/components/Header";
 import InputField from "@/components/InputField";
 import { Link, useRouter } from "expo-router";
 import Separator from "@/components/Separator";
 import OtherLogins from "@/components/auth/OtherLogins";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "react-native-toast-notifications";
+import { Title } from "@/components/StyledText";
 
 export default function SignupScreen() {
+  const toast = useToast();
+
   const [userName, setUserName] = useState("");
   const [userStudyCourse, setUserStudyCourse] = useState("");
   const [userEmail, setUserEmail] = useState("");
@@ -30,7 +32,7 @@ export default function SignupScreen() {
   const router = useRouter();
 
   const validateInput = () => {
-    var nameValid = false;
+    let nameValid = false;
     if (userName.length == 0) {
       setNameError("Name ist erforderlich");
     } else {
@@ -38,7 +40,7 @@ export default function SignupScreen() {
       nameValid = true;
     }
 
-    var studyCourseValid = false;
+    let studyCourseValid = false;
     if (userStudyCourse.length == 0) {
       setStudyCourseError("Studienfach ist erforderlich");
     } else {
@@ -46,7 +48,7 @@ export default function SignupScreen() {
       studyCourseValid = true;
     }
 
-    var emailValid = false;
+    let emailValid = false;
     if (userEmail.length == 0) {
       setEmailError("E-Mail ist erforderlich");
     } else if (userEmail.length < 6) {
@@ -58,7 +60,7 @@ export default function SignupScreen() {
       emailValid = true;
     }
 
-    var passwordValid = false;
+    let passwordValid = false;
     if (userPassword.length == 0) {
       setPasswordError("Passwort ist erforderlich");
     } else if (userPassword.length < 6) {
@@ -72,14 +74,11 @@ export default function SignupScreen() {
       passwordValid = true;
     }
 
-    if (emailValid && passwordValid) {
-      return true;
-    }
-
-    return false;
+    return emailValid && passwordValid;
   };
 
   const register = async () => {
+    let id = toast.show("Registierung...", { type: "loading" });
     if (validateInput()) {
       const result = await onRegister!(
         userName,
@@ -92,62 +91,64 @@ export default function SignupScreen() {
       if (result && result.error) {
         setError(result.msg);
       } else {
-        router.push("/(tabs)/(tracking)");
+        toast.update(id, "Registierung erfolgreich", { type: "success" });
+        router.push("/(tabs)/modules");
+        //toDo Popup dafür, dass man erst ein neues Modul anlegen muss? oder in Tracking?
       }
     }
   };
 
   return (
-    <>
-      <Header title="Registrieren"></Header>
-      <View style={styles.container}>
-        <View style={styles.outerWrapper}>
-          <View style={styles.row}>
-            <InputField
-              label="Name"
-              value={userName}
-              onChangeText={setUserName}
-              message={nameError}
-              messageColor="red"
-            />
-            <InputField
-              label="Studienfach"
-              onChangeText={setUserStudyCourse}
-              value={userStudyCourse}
-              message={studyCourseError}
-              messageColor="red"
-            />
-          </View>
-          <View style={styles.row}>
-            <InputField
-              label="E-Mail"
-              onChangeText={setUserEmail}
-              value={userEmail}
-              keyboardType="email-address"
-              message={emailError}
-              messageColor="red"
-            />
-          </View>
-          <View style={styles.row}>
-            <InputField
-              label="Passwort"
-              onChangeText={setUserPassword}
-              value={userPassword}
-              keyboardType="visible-password"
-              secureTextEntry={true}
-              message={passwordError}
-              messageColor="red"
-            />
-            <InputField
-              label="Passwort wiederholen"
-              onChangeText={setUserCheckPassword}
-              value={userCheckPassword}
-              keyboardType="visible-password"
-              secureTextEntry={true}
-            />
-          </View>
+    <View style={styles.container}>
+      <Title>Student Time Tracker</Title>
+      <View style={styles.outerWrapper}>
+        <View style={styles.row}>
+          <InputField
+            label="Name"
+            value={userName}
+            onChangeText={setUserName}
+            message={nameError}
+            messageColor="red"
+          />
+          <InputField
+            label="Studienfach"
+            onChangeText={setUserStudyCourse}
+            value={userStudyCourse}
+            message={studyCourseError}
+            messageColor="red"
+          />
         </View>
-        <View style={styles.buttons}>
+        <View style={styles.row}>
+          <InputField
+            label="E-Mail"
+            onChangeText={setUserEmail}
+            value={userEmail}
+            keyboardType="email-address"
+            message={emailError}
+            messageColor="red"
+          />
+        </View>
+        <View style={styles.row}>
+          <InputField
+            label="Passwort"
+            onChangeText={setUserPassword}
+            value={userPassword}
+            keyboardType="default"
+            secureTextEntry={true}
+            message={passwordError}
+            messageColor="red"
+          />
+          <InputField
+            label="Passwort wiederholen"
+            onChangeText={setUserCheckPassword}
+            value={userCheckPassword}
+            keyboardType="default"
+            secureTextEntry={true}
+          />
+        </View>
+      </View>
+      <View style={styles.buttons}>
+        <View style={styles.buttonText}>
           <Button
             text="Registrieren"
             backgroundColor={COLORTHEME.light.primary}
@@ -167,7 +168,7 @@ export default function SignupScreen() {
         <Separator text="oder" />
         <OtherLogins />
       </View>
-    </>
+    </View>
   );
 }
 
@@ -175,8 +176,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    justifyContent: "space-around",
-    paddingHorizontal: 12,
+    justifyContent: "space-evenly",
+    gap: 35,
   },
   outerWrapper: {
     width: "100%",
@@ -193,24 +194,12 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     gap: 16,
   },
-  inputLabelGroup: {
-    flex: 1,
-    gap: 5,
-    flexDirection: "column",
-    backgroundColor: "transparent",
-  },
-  inputLabelText: {
-    color: COLORTHEME.light.primary,
-  },
-  input: {
-    flexGrow: 1,
-    backgroundColor: COLORTHEME.light.grey2,
-    color: COLORTHEME.light.grey3,
-    borderRadius: 12,
-    height: 40,
-    paddingHorizontal: 10,
-  },
   buttons: {
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 25,
+  },
+  buttonText: {
     flexDirection: "column",
     alignItems: "center",
     gap: 15,

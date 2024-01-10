@@ -6,6 +6,7 @@ import { Svg } from "react-native-svg";
 import { View } from "@/components/Themed";
 import { COLORTHEME, COLORS } from "@/constants/Theme";
 import { msToTimeObject, formatTime } from "@/libs/timeHelper";
+import { sendPushNotification } from "@/libs/handleLocalNotification";
 
 export default function Timer(props: {
   isStopwatch: boolean;
@@ -43,6 +44,7 @@ export default function Timer(props: {
   });
   const [isPause, setIsPause] = useState(false);
   const [progress, setProgress] = useState({ data: [{}] });
+  const [isLastRound, setIsLastRound] = useState(false);
   const moduleColorRef = useRef(moduleColor);
 
   useEffect(() => {
@@ -56,6 +58,15 @@ export default function Timer(props: {
     }
     setProgress({ data: getProgressData(currentTime, currentPauseTime) });
   }, [moduleColor]);
+
+  useEffect(() => {
+    if (!trackingIsActive) return;
+    sendPushNotification(
+      "tracking",
+      "Tracking",
+      `${isPause ? "Gönn dir eine Pause" : "Pause ist vorbei"}`
+    );
+  }, [isPause]);
 
   const getProgressData = (curTime: number, curPauseTime?: number) => {
     if (isStopwatch) {
@@ -125,6 +136,7 @@ export default function Timer(props: {
       setCurrentTime(totalTime);
       setDisplayTime(msToTimeObject(totalTime));
       setProgress({ data: getProgressData(totalTime) });
+      setIsLastRound(false);
     }
     setDisplayPauseTime({ hours: 0, mins: 0, secs: 0 });
     setIsPause(false);
@@ -166,6 +178,13 @@ export default function Timer(props: {
         setDisplayTime(msToTimeObject(elapsedTime));
         setDisplayPauseTime(msToTimeObject(pauseTime));
         setProgress({ data: getProgressData(elapsedTime, curPauseTime) });
+        if (!isStopwatch) {
+          let totalTime = Number(rounds) * (roundLen + pauseLen) - pauseLen;
+          let currentRound = Math.ceil(
+            (totalTime - elapsedTime) / (roundLen + pauseLen)
+          );
+          setIsLastRound(currentRound === rounds);
+        }
       }, 100);
     } else if (startTime === 0) {
       resetTimer();
@@ -200,7 +219,7 @@ export default function Timer(props: {
           text={formatTime(displayTime)}
           style={styles.timerText}
         />
-        {(trackingIsActive || startTime !== 0) && (
+        {(trackingIsActive || startTime !== 0) && !isLastRound && (
           <VictoryLabel
             textAnchor="middle"
             verticalAnchor="middle"
@@ -222,10 +241,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   timerText: {
+    fontFamily: "OpenSans_Bold",
     fontSize: 50,
-    fontWeight: "bold",
   },
   pauseText: {
+    fontFamily: "OpenSans_SemiBold",
     fontSize: 18,
   },
 });
