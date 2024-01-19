@@ -44,15 +44,10 @@ public class LearningUnit {
     }
 
     public LearningUnit() {
-
     }
 
     public Long getId() {
         return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
     }
 
     public LearningUnitEnum getName() {
@@ -96,7 +91,8 @@ public class LearningUnit {
     }
 
     public Double getTotalLearningTime() {
-        double learningTime = ChronoUnit.WEEKS.between(this.startDate, this.endDate) * this.workloadPerWeek;
+        long learningWeeks = Math.max(1, ChronoUnit.WEEKS.between(this.startDate, this.endDate));
+        double learningTime = learningWeeks * this.workloadPerWeek;
         return (Double) new BigDecimal(learningTime).round(new MathContext(2)).doubleValue();
     }
 }
