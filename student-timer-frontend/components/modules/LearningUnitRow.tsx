@@ -6,6 +6,7 @@ import { computeDateDifference } from "@/libs/moduleTypeHelper";
 import { convertMinutesToHours } from "@/libs/timeHelper";
 import { P, Subhead } from "../StyledText";
 import { Pencil, Trash2 } from "lucide-react-native";
+import { BASE_STYLES } from "@/constants/Theme";
 
 type learningUnitProps = {
   learningUnit: LearningUnitType;
@@ -45,16 +46,18 @@ export default function LearningUnitRow(props: learningUnitProps) {
       <Subhead>
         {convertMinutesToHours(learningUnit.totalLearningTime)} Std.
       </Subhead>
-      {onEdit && (
-        <Pressable onPress={onEdit}>
-          <Pencil name="pencil" size={18} color="black" />
-        </Pressable>
-      )}
-      {onDelete && (
-        <Pressable onPress={onDelete}>
-          <Trash2 size={18} name="trash2" color="red" />
-        </Pressable>
-      )}
+      <View style={styles.optionWrapper}>
+        {onEdit && (
+          <Pressable onPress={onEdit} style={{ padding: 6 }}>
+            <Pencil name="pencil" size={22} color="black" />
+          </Pressable>
+        )}
+        {onDelete && (
+          <Pressable onPress={onDelete} style={{ padding: 6 }}>
+            <Trash2 size={22} name="trash2" color="red" />
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 }
@@ -69,14 +72,19 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     alignItems: "flex-start",
     flex: 1,
-    padding: 12,
+    padding: BASE_STYLES.wrapperGap,
   },
   unitRow: {
     width: "100%",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 12,
+    gap: 8,
     paddingRight: 8,
+  },
+  optionWrapper: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    alignItems: "center",
   },
 });

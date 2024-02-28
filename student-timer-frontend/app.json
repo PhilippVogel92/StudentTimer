@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "StudentTimer",
+    "name": "Student Timer",
     "slug": "StudentTimer",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -34,11 +34,15 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
+    "notification": {
+      "icon": "./assets/images/notification-icon.png",
+      "iosDisplayInForeground": true
+    },
     "plugins": [
       "expo-router",
       "expo-apple-authentication",
       "@react-native-google-signin/google-signin",
-      ["expo-notifications", { "icon": "./assets/images/icon.png" }]
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true

@@ -20,12 +20,12 @@ export default function ChartContainer({ children, title }: Props) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: COLORTHEME.light.grey2,
-    borderRadius: 12,
+    borderRadius: BASE_STYLES.borderRadius,
     flexDirection: "column",
     justifyContent: "space-between",
-    padding: "4%",
-    gap: 16,
-    minHeight: 250,
+    padding: BASE_STYLES.padding,
+    gap: BASE_STYLES.gap,
+    minHeight: 200,
     width: Dimensions.get("window").width - BASE_STYLES.horizontalPadding * 2,
   },
   title: {
@@ -34,5 +34,6 @@ const styles = StyleSheet.create({
   chart: {
     alignSelf: "center",
     backgroundColor: "transparent",
+    gap: BASE_STYLES.wrapperGap,
   },
 });

@@ -1,17 +1,18 @@
 import Alert from "@/components/Alert";
-import { BASE_STYLES, COLORTHEME, SIZES } from "@/constants/Theme";
+import { SIZES } from "@/constants/Theme";
 import { Stack, router, usePathname } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { Pressable } from "react-native";
 
 export default function ModulesLayout() {
-  return (
+    return (
     <Stack
       screenOptions={{
         headerTitleStyle: {
           fontSize: SIZES.xLarge,
           fontWeight: "500",
         },
+        headerTitleAlign: "center",
         headerShadowVisible: false,
         headerLeft: () => {
           const pathname = usePathname();
@@ -20,73 +21,67 @@ export default function ModulesLayout() {
               return (
                 <Pressable
                   onPress={() => {
-                      Alert({
-                          title: "Änderungen verwerfen?",
-                          message: "Wenn du fortfährst, gehen die Änderungen verloren. Bist du dir sicher?",
-                          onPressConfirm: () => {
-                              const dynamicPath = pathname.replace(
-                                  /\/learningUnits\/\d+/,
-                                  ""
-                              );
-                              router.push(
-                                  `/${dynamicPath.substring(1, dynamicPath.length)}`
-                              );
-                          }
-                      });
+                    Alert({
+                      title: "Änderungen verwerfen?",
+                      message:
+                        "Wenn du fortfährst, gehen die Änderungen verloren. Bist du dir sicher?",
+                      onPressConfirm: () => {
+                        const dynamicPath = pathname.replace(/\/learningUnits\/\d+/, "");
+                        router.push(`/${dynamicPath.substring(1, dynamicPath.length)}`);
+                      },
+                    });
                   }}
                 >
-                  <ChevronLeft />
+                  <ChevronLeft color="black" />
                 </Pressable>
               );
             case pathname.match(/\d+\/learningUnits\/new/)?.input:
               return (
                 <Pressable
-                    onPress={() => {
-                        Alert({
-                            title: "Änderungen verwerfen?",
-                            message: "Wenn du fortfährst, gehen die Änderungen verloren. Bist du dir sicher?",
-                            onPressConfirm: () => {
-                                const dynamicPath = pathname.replace(
-                                    /\/learningUnits\/new/,
-                                    "/edit"
-                                );
-                                router.push(
-                                    `/${dynamicPath.substring(1, dynamicPath.length)}`
-                                );
-                            }
-                        });
-                    }}
+                  onPress={() => {
+                    Alert({
+                      title: "Änderungen verwerfen?",
+                      message:
+                        "Wenn du fortfährst, gehen die Änderungen verloren. Bist du dir sicher?",
+                      onPressConfirm: () => {
+                        const dynamicPath = pathname.replace(/\/learningUnits\/new/, "/edit");
+                        router.push(`/${dynamicPath.substring(1, dynamicPath.length)}`);
+                      },
+                    });
+                  }}
                 >
-                  <ChevronLeft />
+                    <ChevronLeft color="black" />
                 </Pressable>
               );
             case "/modules/new":
             case pathname.match(/\d+\/edit/)?.input:
               return (
                 <Pressable
-                    onPress={() => {
-                        Alert({
-                            title: "Änderungen verwerfen?",
-                            message: "Wenn du fortfährst, gehen die Änderungen verloren. Bist du dir sicher?",
-                            onPressConfirm: () => router.push("/(tabs)/modules")
-                        });
-                    }}
+                  onPress={() => {
+                    Alert({
+                      title: "Änderungen verwerfen?",
+                      message:
+                        "Wenn du fortfährst, gehen die Änderungen verloren. Bist du dir sicher?",
+                      onPressConfirm: () => router.push("/(tabs)/modules"),
+                    });
+                  }}
                 >
-                  <ChevronLeft />
+                    <ChevronLeft color="black" />
                 </Pressable>
               );
             case "/modules/new/learningUnits":
               return (
                 <Pressable
-                    onPress={() => {
-                        Alert({
-                            title: "Änderungen verwerfen?",
-                            message: "Wenn du fortfährst, gehen die Änderungen verloren. Bist du dir sicher?",
-                            onPressConfirm: () => router.push("/modules/new")
-                        });
-                    }}
+                  onPress={() => {
+                    Alert({
+                      title: "Änderungen verwerfen?",
+                      message:
+                        "Wenn du fortfährst, gehen die Änderungen verloren. Bist du dir sicher?",
+                      onPressConfirm: () => router.push("/modules/new"),
+                    });
+                  }}
                 >
-                  <ChevronLeft />
+                    <ChevronLeft color="black" />
                 </Pressable>
               );
             default:
@@ -98,7 +93,7 @@ export default function ModulesLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: "Modulübersicht",
+            title: "Modulübersicht",
         }}
       />
       <Stack.Screen
@@ -109,10 +104,17 @@ export default function ModulesLayout() {
           animation: "default",
         }}
       />
-      <Stack.Screen name="[id]/edit" options={{ title: "Modul bearbeiten" }} />
       <Stack.Screen
-        name="[id]/learningUnits/new"
-        options={{ title: "Lerneinheit hinzufügen" }}
+          name="[id]/edit"
+          options={{
+              title: "Modul bearbeiten",
+          }}
+      />
+      <Stack.Screen
+          name="[id]/learningUnits/new"
+          options={{
+            title: "Lerneinheit hinzufügen",
+          }}
       />
       <Stack.Screen
         name="[id]/learningSessions/[learningSessionId]/edit"
@@ -124,11 +126,15 @@ export default function ModulesLayout() {
       />
       <Stack.Screen
         name="new/index"
-        options={{ title: "Neues Modul anlegen" }}
+        options={{
+          title: "Neues Modul anlegen",
+        }}
       />
       <Stack.Screen
-        name="new/learningUnits"
-        options={{ title: "Lerneinheiten hinzufügen" }}
+          name="new/learningUnits"
+          options={{
+            title: "Lerneinheiten hinzufügen",
+          }}
       />
       <Stack.Screen
         name="[id]/learningUnits/[learningUnitId]/edit"

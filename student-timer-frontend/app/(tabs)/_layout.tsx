@@ -7,13 +7,24 @@ import {
   ChevronLeft,
   LayoutList,
   TimerReset,
-  User2,
 } from "lucide-react-native";
 import { Pressable } from "react-native";
 import Alert from "@/components/Alert";
+import ProfilePicture from "@/components/profile/ProfilePicture";
+import { useProfilePicture } from "@/components/profile/useProfilePicture";
+import { useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function TabLayout() {
   // const colorScheme = useColorScheme();
+  const { authState } = useAuth();
+  const { profilePictureName, getProfilePictureName, setProfilePictureName } =
+    useProfilePicture();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setProfilePictureName(getProfilePictureName());
+  }, [authState]);
 
   return (
     <Tabs
@@ -38,7 +49,6 @@ export default function TabLayout() {
               : 5,
         },
         headerLeft: () => {
-          const pathname = usePathname();
           switch (pathname) {
             case "/profile/editData":
             case "/profile/editPassword":
@@ -54,7 +64,7 @@ export default function TabLayout() {
                     });
                   }}
                 >
-                  <ChevronLeft />
+                  <ChevronLeft color="black" />
                 </Pressable>
               );
             default:
@@ -68,7 +78,12 @@ export default function TabLayout() {
         options={{
           title: "Tracking",
           tabBarIcon: ({ color }) => (
-            <TimerReset name="clock-o" color={color} />
+            <TimerReset
+              name="clock-o"
+              color={color}
+              absoluteStrokeWidth
+              strokeWidth={BASE_STYLES.iconWidth}
+            />
           ),
         }}
       />
@@ -78,7 +93,14 @@ export default function TabLayout() {
           headerShown: false,
           href: "/modules",
           title: "Module",
-          tabBarIcon: ({ color }) => <LayoutList name="module" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <LayoutList
+              name="module"
+              color={color}
+              absoluteStrokeWidth
+              strokeWidth={BASE_STYLES.iconWidth}
+            />
+          ),
         }}
       />
       <Tabs.Screen
@@ -86,7 +108,12 @@ export default function TabLayout() {
         options={{
           title: "Statistik",
           tabBarIcon: ({ color }) => (
-            <BarChart2 name="statistic" color={color} />
+            <BarChart2
+              name="statistic"
+              color={color}
+              absoluteStrokeWidth
+              strokeWidth={BASE_STYLES.iconWidth}
+            />
           ),
         }}
       />
@@ -95,7 +122,14 @@ export default function TabLayout() {
         options={{
           title: "Profil",
           href: "/profile",
-          tabBarIcon: ({ color }) => <User2 name="profile" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <ProfilePicture
+              imageName={profilePictureName}
+              miniature={true}
+              color={color}
+              onPress={() => router.push("/profile")}
+            />
+          ),
         }}
       />
     </Tabs>

@@ -1,5 +1,5 @@
 import { View, StyleSheet, Pressable } from "react-native";
-import { COLORS, COLORTHEME } from "@/constants/Theme";
+import { BASE_STYLES, COLORS, COLORTHEME } from "@/constants/Theme";
 import DateTimePicker from "../DateTimePicker";
 import { LearningUnitType } from "@/types/LearningUnitType";
 import { LabelS, P } from "../StyledText";
@@ -8,63 +8,88 @@ import { Trash2 } from "lucide-react-native";
 import InputFieldNumeric from "../InputFieldNumeric";
 import { LearningUnitEnum } from "@/constants/LearningUnitEnum";
 import { ObjectKey } from "@/context/ModuleContext";
+import { useState } from "react";
 
 type LearningUnitFormProps = {
   inputData: LearningUnitType;
   onDelete?: (id: number) => void | undefined;
-  onChange: (vaules: LearningUnitType) => void;
+  onChange: (values: LearningUnitType) => void;
+  onValidationError: (errorOccured: boolean) => void;
 };
 
 export function LearningUnitForm(props: LearningUnitFormProps) {
-  const { inputData, onDelete, onChange } = props;
+  const { inputData, onDelete, onChange, onValidationError } = props;
 
   const handleChange = (value: LearningUnitType) => {
     onChange({ ...inputData, ...value });
   };
 
+  const [workloadError, setWorkloadError] = useState(false);
+
   const updateWorkloadHours = (value: number) => {
-    let formattedHourValue = Math.round(Math.abs(+value * 60));
-    let updatedWorkloadPerWeekMinutes = 1;
-    if (
-      formattedHourValue === 0 &&
-      (!inputData.workloadPerWeekMinutes ||
-        inputData.workloadPerWeekMinutes <= 0)
-    ) {
-      updatedWorkloadPerWeekMinutes = 1;
-    } else {
-      updatedWorkloadPerWeekMinutes = inputData.workloadPerWeekMinutes!;
+    if (isNaN(value)) {
+      return;
     }
 
-    let updatedTotalWorkloadPerWeek =
-      formattedHourValue + updatedWorkloadPerWeekMinutes;
+    let formattedValue = Math.round(Math.abs(+value * 60));
+
+    if (
+      formattedValue <= 0 &&
+      (inputData.workloadPerWeekMinutes === undefined ||
+        inputData.workloadPerWeekMinutes <= 0)
+    ) {
+      handleChange({
+        workloadPerWeekHours: 0,
+      } as LearningUnitType);
+      setWorkloadError(true);
+      onValidationError(true);
+      return;
+    }
+
+    let updatedTotalWorkloadPerWeek = formattedValue;
+
+    if (inputData.workloadPerWeekMinutes)
+      updatedTotalWorkloadPerWeek += inputData.workloadPerWeekMinutes;
 
     handleChange({
-      workloadPerWeekMinutes: updatedWorkloadPerWeekMinutes,
-      workloadPerWeekHours: formattedHourValue,
+      workloadPerWeekHours: formattedValue,
       workloadPerWeek: updatedTotalWorkloadPerWeek,
     } as LearningUnitType);
+    setWorkloadError(false);
+    onValidationError(false);
   };
 
   const updateWorkloadMinutes = (value: number) => {
-    let formattedValue =
-      Math.round(Math.abs(+value)) >= 60 ? 59 : Math.round(Math.abs(+value));
-    if (
-      formattedValue === 0 &&
-      (!inputData.workloadPerWeekHours || inputData.workloadPerWeekHours <= 0)
-    ) {
-      formattedValue = 1;
+    if (isNaN(value)) {
+      return;
     }
 
-    let updatedTotalWorkloadPerWeek;
+    let formattedValue =
+      Math.round(Math.abs(+value)) >= 60 ? 59 : Math.round(Math.abs(+value));
+
+    if (
+      formattedValue <= 0 &&
+      (inputData.workloadPerWeekHours === undefined ||
+        inputData.workloadPerWeekHours <= 0)
+    ) {
+      handleChange({
+        workloadPerWeekMinutes: 0,
+      } as LearningUnitType);
+      setWorkloadError(true);
+      onValidationError(true);
+      return;
+    }
+
+    let updatedTotalWorkloadPerWeek = formattedValue;
     if (inputData.workloadPerWeekHours)
-      updatedTotalWorkloadPerWeek =
-        formattedValue + inputData.workloadPerWeekHours;
-    else updatedTotalWorkloadPerWeek = formattedValue;
+      updatedTotalWorkloadPerWeek += inputData.workloadPerWeekHours;
 
     handleChange({
       workloadPerWeekMinutes: formattedValue,
       workloadPerWeek: updatedTotalWorkloadPerWeek,
     } as LearningUnitType);
+    setWorkloadError(false);
+    onValidationError(false);
   };
 
   return (
@@ -119,6 +144,7 @@ export function LearningUnitForm(props: LearningUnitFormProps) {
                 : "0"
             }
             inputUnit="Std."
+            showErrorBorder={workloadError}
           />
           <InputFieldNumeric
             onChangeText={(value) => updateWorkloadMinutes(+value)}
@@ -128,8 +154,12 @@ export function LearningUnitForm(props: LearningUnitFormProps) {
                 : "0"
             }
             inputUnit="min."
+            showErrorBorder={workloadError}
           />
         </View>
+        {workloadError && (
+          <P style={styles.errorMessage}>Bitte gebe den Arbeitsaufwand an</P>
+        )}
       </View>
       {onDelete && (
         <View
@@ -148,7 +178,12 @@ export function LearningUnitForm(props: LearningUnitFormProps) {
             >
               Lerneinheit entfernen
             </LabelS>
-            <Trash2 size={14} color={COLORTHEME.light.danger} />
+            <Trash2
+              size={14}
+              color={COLORTHEME.light.danger}
+              strokeWidth={BASE_STYLES.iconWidth}
+              absoluteStrokeWidth
+            />
           </Pressable>
         </View>
       )}
@@ -160,21 +195,21 @@ const styles = StyleSheet.create({
   outerWrapper: {
     width: "100%",
     backgroundColor: COLORTHEME.light.grey1,
-    borderRadius: 12,
+    borderRadius: BASE_STYLES.borderRadius,
     flexDirection: "column",
     justifyContent: "space-between",
-    padding: 24,
-    gap: 5,
+    padding: BASE_STYLES.padding,
+    gap: BASE_STYLES.wrapperGap,
   },
   row: {
     flexGrow: 1,
     flexDirection: "row",
     backgroundColor: "transparent",
-    gap: 16,
+    gap: BASE_STYLES.wrapperGap,
   },
   options: {
-    gap: 8,
-    padding: 8,
+    gap: BASE_STYLES.wrapperGap,
+    paddingVertical: BASE_STYLES.wrapperGap,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
@@ -187,7 +222,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   workloadRowContainer: {
-    gap: 5,
+    gap: BASE_STYLES.labelGap,
     flexDirection: "column",
     backgroundColor: "transparent",
   },

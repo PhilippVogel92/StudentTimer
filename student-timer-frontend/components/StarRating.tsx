@@ -2,7 +2,7 @@ import React from "react";
 import { View } from "@/components/Themed";
 import { Pressable, StyleSheet } from "react-native";
 import { StarIcon } from "lucide-react-native";
-import { COLORTHEME } from "@/constants/Theme";
+import { BASE_STYLES, COLORTHEME } from "@/constants/Theme";
 
 type Props = {
   starAmount: number;
@@ -29,10 +29,12 @@ export default function StarRating({
             >
               <StarIcon
                 name="star"
-                color=""
+                color={color || COLORTHEME.light.primary}
                 fill={color || COLORTHEME.light.primary}
-                opacity={index < starAmount ? 1 : 0.4}
                 size={52}
+                fillOpacity={index < starAmount ? 1 : 0.1}
+                strokeWidth={BASE_STYLES.iconWidth}
+                absoluteStrokeWidth
               />
             </Pressable>
           ))}
@@ -45,10 +47,12 @@ export default function StarRating({
           <StarIcon
             key={index}
             name="star"
-            color=""
+            color={color || COLORTHEME.light.primary}
             fill={color || COLORTHEME.light.primary}
-            opacity={index < starAmount ? 1 : 0.4}
             size={52}
+            fillOpacity={index < starAmount ? 1 : 0.1}
+            strokeWidth={BASE_STYLES.iconWidth}
+            absoluteStrokeWidth
           />
         ))}
       </View>
@@ -60,7 +64,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     backgroundColor: "transparent",
-    gap: 10,
+    gap: BASE_STYLES.wrapperGap,
   },
   star: {
     cursor: "pointer",

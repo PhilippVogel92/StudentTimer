@@ -24,17 +24,18 @@ export default function LearningUnitSreen(props: LearningUnitScreenProps) {
   const { modules, setModules } = useModules();
   const router = useRouter();
   const [openChanges, setOpenChanges] = useState(false);
+  const [saveDisabled, setSaveDisabled] = useState(false);
 
-  const [newUnitState, setNewUnitState] = useState<LearningUnitType>({
+  const [unitData, setUnitData] = useState<LearningUnitType>({
     id: +learningUnitId,
     name: LearningUnitEnum.VORLESUNG,
-    workloadPerWeek: 1,
+    workloadPerWeek: 60,
     startDate: new Date(),
     endDate: new Date(),
     totalLearningTime: 0,
     colorCode: COLORS.VORLESUNG,
-    workloadPerWeekMinutes: 1,
-    workloadPerWeekHours: 0,
+    workloadPerWeekHours: 60,
+    workloadPerWeekMinutes: 0,
   } as LearningUnitType);
 
   useEffect(() => {
@@ -47,12 +48,17 @@ export default function LearningUnitSreen(props: LearningUnitScreenProps) {
         (unit) => unit.id.toString() === learningUnitId
       );
 
-      learningUnitToEdit && setNewUnitState({ ...learningUnitToEdit });
+      learningUnitToEdit && setUnitData({ ...learningUnitToEdit });
     }
   }, []);
 
   const handleUpdate = (createdUnit: LearningUnitType) => {
-    setNewUnitState(createdUnit);
+    setUnitData(createdUnit);
+    if (!openChanges) setOpenChanges(true);
+  };
+
+  const handleValidationError = (errorOccured: boolean) => {
+    setSaveDisabled(errorOccured);
   };
 
   const onSave = async () => {
@@ -62,21 +68,21 @@ export default function LearningUnitSreen(props: LearningUnitScreenProps) {
     let updatedModule = { ...detailModule };
 
     const updatedUnitLearningTime =
-      newUnitState.workloadPerWeek *
-      computeDateDifference(newUnitState.endDate, newUnitState.startDate, true);
+      unitData.workloadPerWeek *
+      computeDateDifference(unitData.endDate, unitData.startDate, true);
 
     if (isEdit) {
       updatedModule.learningUnits = updatedModule.learningUnits.map((unit) =>
-        unit.id === newUnitState.id
+        unit.id === unitData.id
           ? {
-              ...newUnitState,
+              ...unitData,
               totalLearningTime: updatedUnitLearningTime,
             }
           : unit
       );
     } else {
       updatedModule.learningUnits.push({
-        ...newUnitState,
+        ...unitData,
         totalLearningTime: updatedUnitLearningTime,
       });
     }
@@ -98,30 +104,34 @@ export default function LearningUnitSreen(props: LearningUnitScreenProps) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <LearningUnitForm
-        key={newUnitState?.id}
-        inputData={newUnitState}
+        key={unitData?.id}
+        inputData={unitData}
         onChange={(inputData) => {
-          if (!openChanges) setOpenChanges(true);
           handleUpdate(inputData);
         }}
+        onValidationError={(errorOccured) =>
+          handleValidationError(errorOccured)
+        }
       />
       <View style={styles.buttonRowWrapper}>
         <Button
           text="Zurück"
-          borderColor={COLORTHEME.light.danger}
+          borderColor={COLORTHEME.light.primary}
           backgroundColor={COLORTHEME.light.background}
-          textColor={COLORTHEME.light.danger}
+          textColor={COLORTHEME.light.primary}
           style={{ flex: 1 }}
           onPress={() =>
-              openChanges
-                  ? Alert({
-                    title: "Eingaben verwerfen?",
-                    message: "Wenn du fortfährst, gehen alle Eingaben verloren. Bist du dir sicher?",
-                    onPressConfirm: () => router.push("/modules"),
-                    cancelText: "Abbrechen",
-                    confirmText: "Ja"
-                  })
-                  : router.push("/modules")
+            openChanges
+              ? Alert({
+                  title: isEdit
+                    ? "Änderungen verwerfen?"
+                    : "Eingaben verwerfen?",
+                  message: isEdit
+                    ? "Wenn du fortfährst, gehen alle Änderungen verloren. Bist du dir sicher?"
+                    : "Wenn du fortfährst, gehen alle Eingaben verloren. Bist du dir sicher?",
+                  onPressConfirm: () => router.back(),
+                })
+              : router.back()
           }
         />
         <Button
@@ -130,6 +140,7 @@ export default function LearningUnitSreen(props: LearningUnitScreenProps) {
           textColor={COLORTHEME.light.grey2}
           style={{ flex: 1 }}
           onPress={onSave}
+          disabled={saveDisabled}
         />
       </View>
     </KeyboardAvoidingView>
@@ -141,14 +152,14 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "column",
     justifyContent: "space-between",
-    gap: 12,
+    gap: BASE_STYLES.gap,
     backgroundColor: COLORTHEME.light.background,
-    paddingVertical: BASE_STYLES.horizontalPadding,
+    paddingVertical: BASE_STYLES.verticalPadding,
   },
   buttonRowWrapper: {
     flexDirection: "row",
     width: "100%",
-    gap: 16,
-    marginBottom: BASE_STYLES.horizontalPadding,
+    gap: BASE_STYLES.wrapperGap,
+    marginBottom: BASE_STYLES.verticalPadding,
   },
 });

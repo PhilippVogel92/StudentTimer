@@ -18,6 +18,7 @@ import LearningUnitRow from "@/components/modules/LearningUnitRow";
 import Button from "@/components/Button";
 import { computeRemainingSessionTime } from "@/libs/moduleTypeHelper";
 import Alert from "@/components/Alert";
+import { toastShow, toastUpdate } from "@/components/Toast";
 
 export default function ModulesDetailScreen() {
   const { id } = useLocalSearchParams<{
@@ -31,14 +32,12 @@ export default function ModulesDetailScreen() {
   const { authAxios } = useAxios();
   const { fetchModules, resetUnitStatus } = useModules();
 
-  const detailModule =
-    modules?.find((module) => module.id.toString() === id) ||
-    ({} as ModuleType);
+  const detailModule = modules?.find((module) => module.id.toString() === id) || ({} as ModuleType);
 
   const onDeleteModule = () => {
     Alert({
       title: "Modul wirklich löschen?",
-      message: `Möchtest du das Modul "${detailModule.name}" wirklich unwiederuflich löschen?\n Auch die zugehörigen Lerneinheiten und Trackings werden dabei gelöscht.`,
+      message: `Möchtest du das Modul "${detailModule.name}" wirklich unwiderruflich löschen?\n Auch die zugehörigen Lerneinheiten und Trackings werden dabei gelöscht.`,
       onPressConfirm: () => {
         deleteModule();
       },
@@ -48,18 +47,16 @@ export default function ModulesDetailScreen() {
   };
 
   const deleteModule = async () => {
-    let id = toast.show("Löschen...", { type: "loading" });
+    let id = toastShow(toast, "Löschen...", { type: "loading" });
     try {
-      await authAxios?.delete(
-        `/students/${authState?.user.id}/modules/${detailModule.id}`
-      );
-      toast.update(id, "Modul erfolgreich gelöscht", { type: "success" });
+      await authAxios?.delete(`/students/${authState?.user.id}/modules/${detailModule.id}`);
+      toastUpdate(toast, id, "Modul erfolgreich gelöscht", { type: "success" });
 
       // Navigate back before fetching, as the modal is still open and would throw an error if displayed module doesn't exist anymore
       router.back();
       fetchModules && (await fetchModules());
     } catch (e) {
-      toast.update(id, `Fehler beim Löschen des Moduls: ${e}`, {
+      toastUpdate(toast, id, `Fehler beim Löschen des Moduls: ${e}`, {
         type: "danger",
       });
     }
@@ -68,7 +65,7 @@ export default function ModulesDetailScreen() {
   const onDeleteTracking = (trackingSessionId: number) => {
     Alert({
       title: "Tracking wirklich löschen?",
-      message: "Möchtest du das Tracking wirklich unwiederuflich löschen?",
+      message: "Möchtest du das Tracking wirklich unwiderruflich löschen?",
       onPressConfirm: () => {
         deleteLearningSession(trackingSessionId);
       },
@@ -78,15 +75,17 @@ export default function ModulesDetailScreen() {
   };
 
   const deleteLearningSession = async (trackingSessionId: number) => {
-    let id = toast.show("Löschen...", { type: "loading" });
+    let id = toastShow(toast, "Löschen...", { type: "loading" });
     try {
       await authAxios?.delete(
         `/students/${authState?.user.id}/modules/${detailModule.id}/learningSessions/${trackingSessionId}`
       );
-      toast.update(id, "Tracking erfolgreich gelöscht", { type: "success" });
       fetchModules && (await fetchModules());
+      toastUpdate(toast, id, "Tracking erfolgreich gelöscht", {
+        type: "success",
+      });
     } catch (e) {
-      toast.update(id, `Fehler beim Löschen des Trackings: ${e}`, {
+      toastUpdate(toast, id, `Fehler beim Löschen des Trackings: ${e}`, {
         type: "danger",
       });
     }
@@ -109,9 +108,7 @@ export default function ModulesDetailScreen() {
         <ModuleChart
           inputData={detailModule.learningUnits}
           totalAmount={convertMinutesToHours(detailModule.totalModuleTime)}
-          totalAmountDone={convertMinutesToHours(
-            detailModule.totalLearningTime
-          )}
+          totalAmountDone={convertMinutesToHours(detailModule.totalLearningTime)}
           width={200}
           height={200}
         />
@@ -162,9 +159,7 @@ export default function ModulesDetailScreen() {
               darkColor={COLORTHEME.dark.text}
             />
             <Subhead>
-              {`Gesamt: ${convertMinutesToHours(
-                detailModule.totalLearningTime
-              )} Std.`}
+              {`Gesamt: ${convertMinutesToHours(detailModule.totalLearningTime)} Std.`}
             </Subhead>
           </View>
         </View>
@@ -189,10 +184,7 @@ export default function ModulesDetailScreen() {
                 <View key={item.id}>
                   <View style={styles.unitRow}>
                     <View
-                      style={[
-                        styles.moduleIndicatorM,
-                        { backgroundColor: detailModule.colorCode },
-                      ]}
+                      style={[styles.moduleIndicatorM, { backgroundColor: detailModule.colorCode }]}
                     />
                     <View style={styles.unitRowTitle}>
                       <Subhead>
@@ -206,9 +198,7 @@ export default function ModulesDetailScreen() {
                         {item.description}
                       </P>
                     </View>
-                    <Subhead>
-                      {convertMinutesToHours(item.totalDuration)} Std.
-                    </Subhead>
+                    <Subhead>{convertMinutesToHours(item.totalDuration)} Std.</Subhead>
                     <View
                       style={{
                         flexDirection: "row",
@@ -217,24 +207,35 @@ export default function ModulesDetailScreen() {
                       }}
                     >
                       <Subhead>{item.rating}</Subhead>
-                      <StarIcon
-                        color=""
-                        fill={COLORTHEME.light.text}
-                        size={20}
-                      />
+                      <StarIcon color="" fill={COLORTHEME.light.text} size={20} />
                     </View>
-                    <Pressable
-                      onPress={() => {
-                        router.push({
-                          pathname: `/(tabs)/modules/${detailModule.id}/learningSessions/${item.id}/edit`,
-                        } as never);
-                      }}
-                    >
-                      <Pencil name="pencil" size={18} color="black" />
-                    </Pressable>
-                    <Pressable onPress={() => onDeleteTracking(item.id)}>
-                      <Trash2 size={18} name="trash2" color="red" />
-                    </Pressable>
+                    <View style={styles.optionWrapper}>
+                      <Pressable
+                        style={{ padding: 6 }}
+                        onPress={() => {
+                          router.push({
+                            pathname: `/(tabs)/modules/${detailModule.id}/learningSessions/${item.id}/edit`,
+                          } as never);
+                        }}
+                      >
+                        <Pencil
+                          name="pencil"
+                          size={22}
+                          color="black"
+                          strokeWidth={BASE_STYLES.iconWidth}
+                          absoluteStrokeWidth
+                        />
+                      </Pressable>
+                      <Pressable style={{ padding: 6 }} onPress={() => onDeleteTracking(item.id)}>
+                        <Trash2
+                          size={22}
+                          name="trash2"
+                          color="red"
+                          strokeWidth={BASE_STYLES.iconWidth}
+                          absoluteStrokeWidth
+                        />
+                      </Pressable>
+                    </View>
                   </View>
                 </View>
               );
@@ -250,16 +251,16 @@ const styles = StyleSheet.create({
   outerWrapper: {
     flex: 1,
     justifyContent: "flex-start",
-    paddingVertical: BASE_STYLES.horizontalPadding,
+    paddingVertical: BASE_STYLES.verticalPadding,
     backgroundColor: COLORTHEME.light.background,
-    paddingBottom: 20,
+    paddingBottom: BASE_STYLES.verticalPadding,
   },
   scrollViewContainerStyle: {
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 24,
-    gap: 30,
+    padding: BASE_STYLES.padding,
+    gap: BASE_STYLES.gap,
   },
   chartWrapper: {
     width: "100%",
@@ -272,26 +273,26 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 12,
+    gap: BASE_STYLES.wrapperGap,
   },
   unitWrapper: {
     width: "100%",
     flexDirection: "column",
     justifyContent: "flex-start",
-    gap: 12,
+    gap: BASE_STYLES.wrapperGap,
   },
   unitRowTitle: {
     flexDirection: "column",
     alignItems: "flex-start",
     flex: 1,
-    padding: 12,
+    padding: BASE_STYLES.wrapperGap,
   },
   unitRow: {
     width: "100%",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 12,
+    gap: 8,
   },
   moduleIndicatorM: {
     width: 24,
@@ -301,10 +302,16 @@ const styles = StyleSheet.create({
   resultRow: {
     flexDirection: "column",
     alignItems: "flex-end",
+    paddingRight: BASE_STYLES.wrapperGap,
   },
   separator: {
-    marginVertical: 12,
+    marginVertical: BASE_STYLES.verticalPadding,
     height: 1,
     width: "20%",
+  },
+  optionWrapper: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    alignItems: "center",
   },
 });

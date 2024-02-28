@@ -8,7 +8,7 @@ import {
   Platform,
 } from "react-native";
 import { Text, View } from "@/components/Themed";
-import { COLORTHEME } from "@/constants/Theme";
+import { BASE_STYLES, COLORTHEME } from "@/constants/Theme";
 
 export type InputFieldProps = {
   label?: string;
@@ -21,15 +21,22 @@ export type InputFieldProps = {
   messageColor?: string;
   style?: ViewStyle;
   inputUnit?: string;
+  showErrorBorder?: boolean;
 };
 
 export default function InputField(props: InputFieldProps & TextInputProps) {
-  const { label, style, inputUnit, message, messageColor } = props;
+  const { label, style, inputUnit, message, messageColor, showErrorBorder } =
+    props;
   return (
     <View style={[styles.inputLabelGroup, style]}>
       {label && <Text style={styles.inputLabelText}>{label}</Text>}
-      <View style={styles.inputUnitContainer}>
-        <View style={styles.inputContainer}>
+      <View
+        style={[
+          styles.inputUnitContainer,
+          { borderColor: showErrorBorder ? "red" : "transparent" },
+        ]}
+      >
+        <View style={[styles.inputContainer]}>
           <TextInput {...props} style={styles.input} />
         </View>
         {inputUnit && <Text style={styles.unit}>{inputUnit}</Text>}
@@ -46,7 +53,7 @@ export default function InputField(props: InputFieldProps & TextInputProps) {
 
 const styles = StyleSheet.create({
   inputLabelGroup: {
-    gap: 5,
+    gap: BASE_STYLES.labelGap,
     flexGrow: 1,
     flexBasis: 50,
     flexDirection: "column",
@@ -60,9 +67,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORTHEME.light.grey2,
-    borderRadius: 12,
-    height: 40,
-    paddingHorizontal: 10,
+    borderRadius: BASE_STYLES.borderRadius,
+    height: BASE_STYLES.inputFieldHeight,
+    paddingHorizontal: BASE_STYLES.inputFieldHorizontalPadding,
+    borderWidth: 1,
   },
   inputContainer: {
     flex: 1,
@@ -79,12 +87,7 @@ const styles = StyleSheet.create({
   },
   unit: {
     color: COLORTHEME.light.grey3,
-    marginLeft: 10,
-  },
-  buttons: {
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 15,
+    marginLeft: BASE_STYLES.inputFieldHorizontalPadding,
   },
   messageText: {
     fontSize: 12,

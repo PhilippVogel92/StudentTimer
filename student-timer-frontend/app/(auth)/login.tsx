@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 import { useState } from "react";
 import { Link, useRouter } from "expo-router";
-import { COLORTHEME } from "@/constants/Theme";
+import { BASE_STYLES, COLORTHEME } from "@/constants/Theme";
 import { Title } from "@/components/StyledText";
 import { View, Text } from "@/components/Themed";
 import Button from "@/components/Button";
@@ -14,6 +14,7 @@ import {
   validateEmail,
   validatePassword,
 } from "@/components/auth/validationMethods";
+import { toastShow, toastUpdate } from "@/components/Toast";
 
 export default function Login() {
   const toast = useToast();
@@ -23,7 +24,6 @@ export default function Login() {
 
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const [error, setError] = useState("");
 
   const { onLogin } = useAuth();
 
@@ -42,15 +42,22 @@ export default function Login() {
   };
 
   const login = async () => {
-    let id = toast.show("Login...", { type: "loading" });
     if (validateInput()) {
+      let id = toastShow(toast, "Login...", { type: "loading" });
       const result = await onLogin!(email, password);
       if (result && result.error) {
-        setError(result.msg);
+        toastUpdate(
+          toast,
+          id,
+          "Login fehlgeschlagen. Bitte korrigiere Passwort und/oder E-Mail-Adresse.",
+          { type: "danger" }
+        );
       } else {
-        toast.update(id, "Login erfolgreich", { type: "success" });
+        toastUpdate(toast, id, "Login erfolgreich", { type: "success" });
         router.push("/(tabs)/(tracking)");
       }
+    } else {
+      toastShow(toast, "Die Eingaben sind fehlerhaft", { type: "warning" });
     }
   };
 
@@ -65,6 +72,7 @@ export default function Login() {
             value={email}
             placeholder="E-Mail"
             keyboardType="email-address"
+            showErrorBorder={emailError != ""}
             message={emailError}
             messageColor="red"
           />
@@ -77,6 +85,7 @@ export default function Login() {
             label="Passwort"
             keyboardType="default"
             secureTextEntry={true}
+            showErrorBorder={passwordError != ""}
             message={passwordError}
             messageColor="red"
           />
@@ -89,14 +98,14 @@ export default function Login() {
             backgroundColor={COLORTHEME.light.primary}
             textColor={COLORTHEME.light.grey2}
             onPress={login}
-            style={{ width: 200 }}
           />
-
-          {error && <Text style={styles.errorMessage}>{error}</Text>}
-
           <Text>
             Du hast kein Konto?{" "}
-            <Link href="/signup" style={{ textDecorationLine: "underline" }}>
+            <Link
+              href="/signup"
+              style={{ textDecorationLine: "underline" }}
+              replace
+            >
               Account erstellen
             </Link>
           </Text>
@@ -116,17 +125,17 @@ const styles = StyleSheet.create({
   inputs: {
     flexDirection: "column",
     alignItems: "center",
-    gap: 25,
+    gap: BASE_STYLES.wrapperGap,
   },
   buttons: {
     flexDirection: "column",
     alignItems: "center",
-    gap: 15,
+    gap: BASE_STYLES.wrapperGap,
   },
   buttonText: {
     flexDirection: "column",
     alignItems: "center",
-    gap: 15,
+    gap: BASE_STYLES.wrapperGap,
   },
   errorMessage: {
     color: "red",

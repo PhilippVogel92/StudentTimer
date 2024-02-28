@@ -9,13 +9,12 @@ import { StyleSheet, View } from "react-native";
 
 export default function NewModule() {
   const router = useRouter();
-  const [openChanges, setOpenChanges] = useState(false);
 
   const [newModule, setNewModule] = useState<ModuleType>({
     id: -1,
     name: "",
     colorCode: COLORS.moduleColor1,
-    creditPoints: 1,
+    creditPoints: 0,
     examDate: new Date(),
     learningUnits: [],
     learningSessions: [],
@@ -25,31 +24,10 @@ export default function NewModule() {
     totalModuleTime: 0,
   } as ModuleType);
 
+  const [openChanges, setOpenChanges] = useState(false);
+  const [onSaveHandler, setOnSaveHandler] = useState(false);
   const [dateDisabled, setDateDisabled] = useState(false);
-  const [moduleNameError, setModuleNameError] = useState("");
-  const [creditPointError, setCreditPointError] = useState("");
-
-  const validateInput = () => {
-    var nameValid = false;
-    if (newModule.name.trim().length == 0) {
-      setModuleNameError(() => "Name ist erforderlich");
-    } else {
-      setModuleNameError(() => "");
-      nameValid = true;
-    }
-
-    var creditPointsValid = false;
-    if (+newModule.creditPoints <= 0) {
-      setCreditPointError(
-        () => "Creditpoints muss einen Wert größer 0 enthalten"
-      );
-    } else {
-      setCreditPointError(() => "");
-      creditPointsValid = true;
-    }
-
-    return nameValid && creditPointsValid;
-  };
+  const [saveDisabled, setSaveDisabled] = useState<Set<string>>(new Set(["name", "cp"]));
 
   const handleUpdate = (module: ModuleType, disabledStatus?: boolean) => {
     if (module) setNewModule(module);
@@ -57,28 +35,45 @@ export default function NewModule() {
     if (!openChanges) setOpenChanges(true);
   };
 
+  const handleValidationError = (errorType: string, errorOccured: boolean) => {
+    if (errorOccured) {
+      setSaveDisabled((prevSet) => new Set([...prevSet, errorType]));
+    } else {
+      setSaveDisabled((prevSet) => {
+        const updatedSet = new Set<string>(prevSet);
+        updatedSet.delete(errorType);
+        return updatedSet;
+      });
+    }
+  };
+
   const onContinue = () => {
-    if (validateInput()) {
-      if (dateDisabled) {
-        router.push({
-          pathname: "/modules/new/learningUnits",
-          params: {
-            name: newModule.name,
-            colorCode: newModule.colorCode,
-            creditPoints: newModule.creditPoints,
-          },
-        });
-      } else {
-        router.push({
-          pathname: "/modules/new/learningUnits",
-          params: {
-            name: newModule.name,
-            colorCode: newModule.colorCode,
-            creditPoints: newModule.creditPoints,
-            examDate: newModule.examDate?.toISOString().substring(0, 10),
-          },
-        });
-      }
+    // Toggle onSaveHandler to trigger validation in input fields
+    if (!openChanges || saveDisabled.size != 0) {
+      setOnSaveHandler(true);
+      setOpenChanges(true);
+      return;
+    }
+
+    if (dateDisabled) {
+      router.push({
+        pathname: "/modules/new/learningUnits",
+        params: {
+          name: newModule.name.trim(),
+          colorCode: newModule.colorCode,
+          creditPoints: newModule.creditPoints,
+        },
+      });
+    } else {
+      router.push({
+        pathname: "/modules/new/learningUnits",
+        params: {
+          name: newModule.name.trim(),
+          colorCode: newModule.colorCode,
+          creditPoints: newModule.creditPoints,
+          examDate: newModule.examDate?.toISOString().substring(0, 10),
+        },
+      });
     }
   };
 
@@ -88,8 +83,8 @@ export default function NewModule() {
         inputData={newModule}
         onChange={handleUpdate}
         dateDiabled={dateDisabled}
-        moduleNameError={moduleNameError}
-        creditPointError={creditPointError}
+        onValidationError={handleValidationError}
+        onSaveHandler={onSaveHandler}
       />
       <View style={styles.buttonRowWrapper}>
         <Button
@@ -99,13 +94,13 @@ export default function NewModule() {
           textColor={COLORTHEME.light.primary}
           style={{ flex: 1 }}
           onPress={() =>
-              openChanges
-                  ? Alert({
-                    title: "Eingaben verwerfen?",
-                    message: "Wenn du fortfährst, gehen alle Eingaben verloren. Bist du dir sicher?",
-                    onPressConfirm: () => router.push("/modules"),
-                  })
-                  : router.push("/modules")
+            openChanges
+              ? Alert({
+                  title: "Eingaben verwerfen?",
+                  message: "Wenn du fortfährst, gehen alle Eingaben verloren. Bist du dir sicher?",
+                  onPressConfirm: () => router.push("/modules"),
+                })
+              : router.push("/modules")
           }
         />
         <Button
@@ -114,6 +109,7 @@ export default function NewModule() {
           textColor={COLORTHEME.light.grey2}
           style={{ flex: 1 }}
           onPress={onContinue}
+          disabled={saveDisabled.size != 0 && onSaveHandler}
         />
       </View>
     </View>
@@ -125,12 +121,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "space-between",
     backgroundColor: COLORTHEME.light.background,
-    paddingVertical: BASE_STYLES.horizontalPadding,
+    paddingVertical: BASE_STYLES.verticalPadding,
   },
   buttonRowWrapper: {
     flexDirection: "row",
     width: "100%",
-    gap: 16,
-    marginBottom: BASE_STYLES.horizontalPadding,
+    gap: BASE_STYLES.wrapperGap,
   },
 });

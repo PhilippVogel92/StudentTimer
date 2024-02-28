@@ -19,6 +19,7 @@ export default function UserDetailsInput(props: {
   buttonAction: (value: string) => void;
   disabled?: boolean;
   cancelAction: (value: string) => void;
+  showErrorBorder?: boolean;
 }) {
   const {
     title,
@@ -34,6 +35,7 @@ export default function UserDetailsInput(props: {
     buttonAction,
     disabled,
     cancelAction,
+    showErrorBorder,
   } = props;
 
   return (
@@ -46,6 +48,7 @@ export default function UserDetailsInput(props: {
             value={userName}
             onChangeText={setUserName}
             message={nameError}
+            showErrorBorder={nameError != ""}
             messageColor="red"
           />
           <InputField
@@ -53,6 +56,7 @@ export default function UserDetailsInput(props: {
             onChangeText={setUserStudyCourse}
             value={userStudyCourse}
             message={studyCourseError}
+            showErrorBorder={studyCourseError != ""}
             messageColor="red"
           />
         </View>
@@ -63,26 +67,27 @@ export default function UserDetailsInput(props: {
             value={userEmail}
             keyboardType="email-address"
             message={emailError}
+            showErrorBorder={emailError != ""}
             messageColor="red"
           />
         </View>
       </View>
-      <Button
-        text="Speichern"
-        backgroundColor={COLORTHEME.light.primary}
-        textColor={COLORTHEME.light.grey2}
-        onPress={buttonAction}
-        style={{ width: 200 }}
-        disabled={disabled}
-      />
-      <Button
-        text="Abbrechen"
-        backgroundColor={COLORS.white}
-        borderColor={COLORTHEME.light.primary}
-        textColor={COLORTHEME.light.grey3}
-        style={{ width: 200 }}
-        onPress={cancelAction}
-      />
+      <View style={styles.buttons}>
+        <Button
+          text="Speichern"
+          backgroundColor={COLORTHEME.light.primary}
+          textColor={COLORTHEME.light.grey2}
+          onPress={buttonAction}
+          disabled={disabled}
+        />
+        <Button
+          text="Abbrechen"
+          backgroundColor={COLORS.white}
+          borderColor={COLORTHEME.light.primary}
+          textColor={COLORTHEME.light.grey3}
+          onPress={cancelAction}
+        />
+      </View>
     </View>
   );
 }
@@ -91,8 +96,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     justifyContent: "space-around",
-    marginVertical: 10,
-    gap: 10,
+    gap: BASE_STYLES.gap,
   },
   outerWrapper: {
     width: "100%",
@@ -100,41 +104,19 @@ const styles = StyleSheet.create({
     borderRadius: BASE_STYLES.borderRadius,
     flexDirection: "column",
     justifyContent: "space-between",
-    padding: 24,
-    gap: 5,
-    marginVertical: 5,
+    padding: BASE_STYLES.padding,
+    gap: BASE_STYLES.wrapperGap,
   },
   row: {
     flexGrow: 1,
     flexDirection: "row",
     backgroundColor: "transparent",
-    gap: 16,
-  },
-  inputLabelGroup: {
-    flex: 1,
-    gap: 5,
-    flexDirection: "column",
-    backgroundColor: "transparent",
-  },
-  inputLabelText: {
-    color: COLORTHEME.light.primary,
-  },
-  input: {
-    flexGrow: 1,
-    backgroundColor: COLORTHEME.light.grey2,
-    color: COLORTHEME.light.grey3,
-    borderRadius: BASE_STYLES.borderRadius,
-    height: 40,
+    gap: BASE_STYLES.wrapperGap,
   },
   buttons: {
     flexDirection: "column",
     alignItems: "center",
-    gap: 15,
-  },
-  errorMessage: {
-    color: "red",
-    fontSize: 14,
-    textAlign: "center",
+    gap: BASE_STYLES.wrapperGap,
     width: "100%",
   },
 });

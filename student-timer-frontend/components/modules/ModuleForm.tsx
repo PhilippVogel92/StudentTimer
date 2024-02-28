@@ -5,25 +5,20 @@ import InputFieldNumeric from "../InputFieldNumeric";
 import StyledCheckbox from "../StyledCheckbox";
 import { P } from "../StyledText";
 import { View } from "../Themed";
-import { COLORS, COLORTHEME } from "@/constants/Theme";
+import { BASE_STYLES, COLORS, COLORTHEME } from "@/constants/Theme";
 import { ModuleType } from "@/types/ModuleType";
+import { useEffect, useState } from "react";
 
 type ModuleFormProps = {
   inputData: ModuleType;
   dateDiabled: boolean;
-  moduleNameError: string;
-  creditPointError: string;
   onChange: (values: ModuleType, newDateDisabledState?: boolean) => void;
+  onValidationError: (errorType: string, errorOccured: boolean) => void;
+  onSaveHandler?: boolean;
 };
 
 export default function ModuleForm(props: ModuleFormProps) {
-  const {
-    inputData,
-    dateDiabled,
-    moduleNameError,
-    creditPointError,
-    onChange,
-  } = props;
+  const { inputData, dateDiabled, onChange, onValidationError, onSaveHandler } = props;
 
   const selectableColors: string[] = [
     COLORS.moduleColor1,
@@ -36,8 +31,39 @@ export default function ModuleForm(props: ModuleFormProps) {
     COLORS.moduleColor8,
   ];
 
+  const [moduleNameError, setModuleNameError] = useState("");
+  const [creditPointError, setCreditPointError] = useState("");
+
   const handleChange = (value?: any, newDateDisabledState?: boolean) => {
     onChange({ ...inputData, ...value }, newDateDisabledState);
+  };
+
+  // This effect is only supposed to be triggered when the user clicks on the save button and no inputs were made before
+  useEffect(() => {
+    if (onSaveHandler) {
+      validateModuleName(inputData.name);
+      validateCreditPoints(inputData.creditPoints);
+    }
+  }, [onSaveHandler]);
+
+  const validateModuleName = (value: string) => {
+    if (value.trim().length == 0) {
+      setModuleNameError("Der Modulname ist erforderlich");
+      onValidationError("name", true);
+    } else {
+      setModuleNameError("");
+      onValidationError("name", false);
+    }
+  };
+
+  const validateCreditPoints = (value: number) => {
+    if (!value || value <= 0) {
+      setCreditPointError("Das Feld muss einen Wert größer 0 enthalten");
+      onValidationError("cp", true);
+    } else {
+      setCreditPointError("");
+      onValidationError("cp", false);
+    }
   };
 
   return (
@@ -46,17 +72,18 @@ export default function ModuleForm(props: ModuleFormProps) {
         <InputField
           label="Name des Moduls"
           onChangeText={(value) => {
+            validateModuleName(value);
             handleChange({ name: value });
           }}
           value={inputData.name}
           message={moduleNameError}
           messageColor={COLORTHEME.light.danger}
+          showErrorBorder={moduleNameError != ""}
+          placeholder="Modulname"
         />
       </View>
       <View style={styles.dateRowContainer}>
-        <P style={{ color: COLORTHEME.light.primary }}>
-          {"Prüfungsdatum (optional)"}
-        </P>
+        <P style={{ color: COLORTHEME.light.primary }}>{"Prüfungsdatum (optional)"}</P>
         <View style={styles.row}>
           <DateTimePicker
             onChangeDate={(value) => {
@@ -75,21 +102,25 @@ export default function ModuleForm(props: ModuleFormProps) {
           />
         </View>
       </View>
-      <View style={styles.row}>
-        <InputFieldNumeric
-          label="Credit-Points"
-          onChangeText={(value) => {
-            let formattedValue = Math.round(Math.abs(+value));
-            handleChange({
-              creditPoints: formattedValue >= 1 ? formattedValue : 1,
-            });
-          }}
-          value={inputData.creditPoints.toString()}
-          message={creditPointError}
-          messageColor={COLORTHEME.light.danger}
-          inputUnit="CP"
-        />
-        <View style={{ width: "50%", backgroundColor: "transparent" }} />
+      <View style={{ backgroundColor: "transparent", gap: 5 }}>
+        <View style={styles.row}>
+          <InputFieldNumeric
+            label="Credit-Points"
+            onChangeText={(value) => {
+              let formattedValue = Math.round(Math.abs(+value));
+              validateCreditPoints(formattedValue);
+              handleChange({
+                creditPoints: formattedValue,
+              });
+            }}
+            value={inputData.creditPoints === 0 ? "" : inputData.creditPoints.toString()}
+            inputUnit="CP"
+            placeholder="Anzahl"
+            showErrorBorder={creditPointError != ""}
+          />
+          <View style={{ width: "50%", backgroundColor: "transparent" }} />
+        </View>
+        {creditPointError && <P style={styles.errorMessage}>{creditPointError}</P>}
       </View>
       <View style={styles.row}>
         <View style={styles.colorWrapper}>
@@ -118,15 +149,11 @@ export default function ModuleForm(props: ModuleFormProps) {
                       styles.colorOptionIndicator,
                       {
                         borderColor:
-                          inputData.colorCode === color
-                            ? COLORTHEME.light.primary
-                            : "transparent",
+                          inputData.colorCode === color ? COLORTHEME.light.primary : "transparent",
                       },
                     ]}
                   />
-                  <View
-                    style={[styles.colorOption, { backgroundColor: color }]}
-                  />
+                  <View style={[styles.colorOption, { backgroundColor: color }]} />
                 </TouchableOpacity>
               );
             }}
@@ -144,44 +171,19 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     flexDirection: "column",
     justifyContent: "space-between",
-    padding: 24,
-    gap: 12,
-  },
-  scrollViewContainer: {
-    flexGrow: 1,
-    flexDirection: "column",
-    gap: 24,
-    backgroundColor: COLORTHEME.light.background,
-  },
-  scrollViewContainerStyle: {
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 16,
-  },
-  section: {
-    width: "100%",
-    gap: 12,
-    backgroundColor: "transparent",
-  },
-  flatListContainer: {
-    gap: 12,
+    padding: BASE_STYLES.padding,
+    gap: BASE_STYLES.wrapperGap,
   },
   row: {
     flexDirection: "row",
     justifyContent: "flex-start",
     backgroundColor: "transparent",
-    gap: 16,
+    gap: BASE_STYLES.wrapperGap,
   },
   dateRowContainer: {
-    gap: 5,
+    gap: BASE_STYLES.labelGap,
     flexDirection: "column",
     backgroundColor: "transparent",
-  },
-  buttons: {
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 16,
   },
   colorWrapper: {
     flexDirection: "column",
@@ -216,16 +218,9 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 1000,
   },
-  discardLink: {
-    fontSize: 16,
-    textAlign: "center",
-    textDecorationLine: "underline",
-    marginBottom: 20,
-  },
-  unitWrapper: {
-    width: "100%",
-    flexDirection: "column",
-    justifyContent: "flex-start",
-    gap: 16,
+  errorMessage: {
+    color: COLORTHEME.light.danger,
+    fontSize: 12,
+    textAlign: "left",
   },
 });

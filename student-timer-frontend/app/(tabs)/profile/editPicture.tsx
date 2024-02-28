@@ -2,23 +2,28 @@ import React, { useEffect, useState } from "react";
 import Alert from "@/components/Alert";
 import { ScrollView, View } from "@/components/Themed";
 import { StyleSheet } from "react-native";
+//@ts-ignore
+import SwitchSelector from "react-native-switch-selector";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "react-native-toast-notifications";
 import { BASE_STYLES, COLORS } from "@/constants/Theme";
 import ProfilePicture from "@/components/profile/ProfilePicture";
-import { H3, H4 } from "@/components/StyledText";
+import { H3 } from "@/components/StyledText";
 import Button from "@/components/Button";
 import { COLORTHEME } from "@/constants/Theme";
 import {
-  profileImages,
+  profilePatternImages,
+  profileHumanAvatarImages,
+  profileFantasyAvatarImages,
   useProfilePicture,
 } from "@/components/profile/useProfilePicture";
 import ProfilePictureSlider from "@/components/profile/ProfilePictureSlider";
+import { toastShow, toastUpdate } from "@/components/Toast";
 
 export default function EditPicture() {
   const toast = useToast();
-  const { onChangePicture, authState } = useAuth();
+  const { onChangePicture } = useAuth();
   const router = useRouter();
 
   const [isChanged, setIsChanged] = useState(false);
@@ -28,7 +33,12 @@ export default function EditPicture() {
     setImagePath,
     getImagePath,
   } = useProfilePicture();
-  const [, setError] = useState("");
+  const switchCategoryOptions: Array<{ label: string; value: string }> = [
+    { label: "Fantasie", value: "fantasy" },
+    { label: "Portraits", value: "portraits" },
+    { label: "Muster", value: "abstract" },
+  ];
+  const [selectedCategory, setSelectedCategory] = React.useState("fantasy");
 
   useEffect(() => {
     setImagePath(getImagePath(profilePictureName));
@@ -40,14 +50,19 @@ export default function EditPicture() {
     setIsChanged(true);
   };
 
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value);
+  };
+
   const changePicture = async () => {
-    let id = toast.show("Speichern...", { type: "loading" });
+    let id = toastShow(toast, "Speichern...", { type: "loading" });
     const result = await onChangePicture!(profilePictureName);
     if (result && result.error) {
-      setError(result.msg);
-      toast.update(id, result.msg, { type: "danger" });
+      toastUpdate(toast, id, result.msg, { type: "danger" });
     } else {
-      toast.update(id, "Profilbild erfolgreich geändert", { type: "success" });
+      toastUpdate(toast, id, "Profilbild erfolgreich geändert", {
+        type: "success",
+      });
       router.push("/profile/");
     }
   };
@@ -70,37 +85,61 @@ export default function EditPicture() {
   };
 
   return (
-    <View style={styles.container}>
-      <ProfilePicture imageName={profilePictureName} />
-      <H3 style={styles.title}>Profilbild ändern</H3>
-      <View style={{ marginVertical: 15 }}>
-        <H4>Bildauswahl</H4>
-        <View style={{ marginTop: 5 }}>
+    <ScrollView
+      style={{ flex: 1, paddingBottom: BASE_STYLES.verticalPadding }}
+      alwaysBounceVertical={false}
+      contentContainerStyle={{
+        flexGrow: 1,
+        backgroundColor: COLORTHEME.light.background,
+        paddingVertical: BASE_STYLES.verticalPadding,
+      }}
+    >
+      <View style={styles.container}>
+        <ProfilePicture imageName={profilePictureName} />
+        <H3>Profilbild ändern</H3>
+        <View style={styles.pictureContainer}>
+          <SwitchSelector
+            options={switchCategoryOptions}
+            initial={switchCategoryOptions.findIndex(
+              (option) => option.value === selectedCategory
+            )}
+            onPress={(value: string) => handleCategoryChange(value)}
+            backgroundColor={COLORS.grey1}
+            buttonColor={COLORS.primary}
+            buttonMargin={4}
+            selectedColor={COLORS.white}
+            textColor={COLORS.black}
+            borderWidth={0}
+          />
           <ProfilePictureSlider
-            profileImages={profileImages}
+            profileImages={
+              selectedCategory === "portraits"
+                ? profileHumanAvatarImages
+                : selectedCategory === "fantasy"
+                ? profileFantasyAvatarImages
+                : profilePatternImages
+            }
             onSelect={handleImageNameChange}
           />
         </View>
+        <View style={styles.actionContainer}>
+          <Button
+            text="Speichern"
+            backgroundColor={COLORTHEME.light.primary}
+            textColor={COLORTHEME.light.grey2}
+            onPress={changePicture}
+            disabled={!isChanged}
+          />
+          <Button
+            text="Abbrechen"
+            backgroundColor={COLORS.white}
+            borderColor={COLORTHEME.light.primary}
+            textColor={COLORTHEME.light.grey3}
+            onPress={onCancel}
+          />
+        </View>
       </View>
-      <View style={styles.actionContainer}>
-        <Button
-          text="Speichern"
-          backgroundColor={COLORTHEME.light.primary}
-          textColor={COLORTHEME.light.grey2}
-          onPress={changePicture}
-          style={{ width: 200 }}
-          disabled={!isChanged}
-        />
-        <Button
-          text="Abbrechen"
-          backgroundColor={COLORS.white}
-          borderColor={COLORTHEME.light.primary}
-          textColor={COLORTHEME.light.grey3}
-          style={{ width: 200 }}
-          onPress={onCancel}
-        />
-      </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -108,14 +147,15 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     justifyContent: "flex-start",
-    padding: BASE_STYLES.horizontalPadding,
+    gap: BASE_STYLES.gap,
     flex: 1,
+  },
+  pictureContainer: {
+    gap: BASE_STYLES.wrapperGap,
   },
   actionContainer: {
     flexDirection: "column",
-    gap: 10,
-  },
-  title: {
-    paddingVertical: 10,
+    gap: BASE_STYLES.wrapperGap,
+    width: "100%",
   },
 });

@@ -1,7 +1,8 @@
 import Button from "@/components/Button";
+import { toastShow, toastUpdate } from "@/components/Toast";
 import { LearningUnitForm } from "@/components/modules/LearningUnitForm";
 import { LearningUnitEnum } from "@/constants/LearningUnitEnum";
-import { BASE_STYLES, COLORTHEME } from "@/constants/Theme";
+import { BASE_STYLES, COLORS, COLORTHEME, SIZES } from "@/constants/Theme";
 import { useAuth } from "@/context/AuthContext";
 import { useAxios } from "@/context/AxiosContext";
 import { useModules } from "@/context/ModuleContext";
@@ -31,16 +32,17 @@ export default function NewModuleLearningUnits() {
   const { authAxios } = useAxios();
   const { fetchModules } = useModules();
 
+  const [saveDisabled, setSaveDisabled] = useState<Set<string>>(new Set());
   const [learningUnits, setLearningUnits] = useState<LearningUnitType[]>([
     {
       id: Math.random(),
       name: LearningUnitEnum.VORLESUNG,
-      workloadPerWeek: 1,
+      workloadPerWeek: 60,
       startDate: new Date(),
       endDate: new Date(),
       totalLearningTime: 0,
-      workloadPerWeekHours: 0,
-      workloadPerWeekMinutes: 1,
+      workloadPerWeekHours: 60,
+      workloadPerWeekMinutes: 0,
     },
   ]);
 
@@ -59,24 +61,37 @@ export default function NewModuleLearningUnits() {
       });
   };
 
+  const handleValidationError = (unitId: number, errorOccured: boolean) => {
+    if (errorOccured) {
+      setSaveDisabled((prevSet) => new Set([...prevSet, unitId.toString()]));
+    } else {
+      setSaveDisabled((prevSet) => {
+        const updatedSet = new Set<string>(prevSet);
+        updatedSet.delete(unitId.toString());
+        return updatedSet;
+      });
+    }
+  };
+
   const onAddLearningUnit = () => {
     setLearningUnits((prevLearningUnits) => {
       const newlearningUnit = {
         id: Math.random(),
         name: LearningUnitEnum.VORLESUNG,
-        workloadPerWeek: 1,
+        workloadPerWeek: 60,
         startDate: new Date(),
         endDate: new Date(),
+        colorCode: COLORS.VORLESUNG,
         totalLearningTime: 0,
-        workloadPerWeekHours: 0,
-        workloadPerWeekMinutes: 1,
+        workloadPerWeekHours: 60,
+        workloadPerWeekMinutes: 0,
       };
       return [...prevLearningUnits, newlearningUnit];
     });
   };
 
   const onCreateModule = async () => {
-    let id = toast.show("Erstellen...");
+    let id = toastShow(toast, "Erstellen...", { type: "loading" });
     let response;
     try {
       let moduleDTO;
@@ -119,11 +134,13 @@ export default function NewModuleLearningUnits() {
         );
       });
 
-      toast.update(id, "Modul erfolgreich angelegt.", { type: "success" });
       fetchModules && (await fetchModules());
+      toastUpdate(toast, id, "Modul erfolgreich angelegt.", {
+        type: "success",
+      });
       router.push("/(tabs)/modules");
     } catch (e) {
-      toast.update(id, `Fehler beim Erstellen des Moduls: ${e}`, {
+      toastUpdate(toast, id, `Fehler beim Erstellen des Moduls: ${e}`, {
         type: "danger",
       });
     }
@@ -144,6 +161,9 @@ export default function NewModuleLearningUnits() {
               learningUnits.length > 1 ? onDeleteLearningUnit : undefined
             }
             onChange={(inputData) => handleUpdate(inputData, index)}
+            onValidationError={(errorOccured) =>
+              handleValidationError(item.id, errorOccured)
+            }
           />
         )}
         keyExtractor={(item: LearningUnitType) => item.id.toString()}
@@ -157,7 +177,8 @@ export default function NewModuleLearningUnits() {
             textColor={COLORTHEME.light.primary}
             onPress={onAddLearningUnit}
             iconRight={<Plus color={COLORTHEME.light.primary} />}
-            style={{ width: "50%" }}
+            textStyle={{ fontSize: SIZES.xsmall }}
+            style={{ width: "50%", alignSelf: "flex-end" }}
           />
         }
       />
@@ -167,6 +188,7 @@ export default function NewModuleLearningUnits() {
         textColor={COLORTHEME.light.grey2}
         onPress={onCreateModule}
         style={{ marginBottom: BASE_STYLES.horizontalPadding }}
+        disabled={saveDisabled.size != 0}
       />
     </KeyboardAvoidingView>
   );
@@ -177,18 +199,18 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "column",
     justifyContent: "space-between",
-    gap: 12,
+    gap: BASE_STYLES.gap,
     backgroundColor: COLORTHEME.light.background,
-    paddingVertical: BASE_STYLES.horizontalPadding,
+    paddingVertical: BASE_STYLES.verticalPadding,
   },
   scrollViewContainer: {
     flexGrow: 1,
     flexDirection: "column",
     borderRadius: BASE_STYLES.borderRadius,
-    gap: 24,
+    gap: BASE_STYLES.gap,
   },
   scrollViewContainerStyle: {
     justifyContent: "space-around",
-    gap: 16,
+    gap: BASE_STYLES.gap,
   },
 });

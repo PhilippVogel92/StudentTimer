@@ -101,7 +101,9 @@ function RootLayoutNav() {
                           fontSize: SIZES.xLarge,
                           fontWeight: "500",
                         },
+                        headerTitleAlign: "center",
                         headerBackTitleVisible: false,
+                        headerBackVisible: false,
                         contentStyle: {
                           paddingHorizontal: BASE_STYLES.horizontalPadding,
                           backgroundColor: COLORTHEME.light.background,
@@ -116,6 +118,7 @@ function RootLayoutNav() {
                           fontSize: SIZES.xLarge,
                           fontWeight: "500",
                         },
+                        headerTitleAlign: "center",
                         headerBackTitleVisible: false,
                         contentStyle: {
                           paddingHorizontal: BASE_STYLES.horizontalPadding,
@@ -131,6 +134,7 @@ function RootLayoutNav() {
                           fontSize: SIZES.xLarge,
                           fontWeight: "500",
                         },
+                        headerTitleAlign: "center",
                         headerBackVisible: false,
                         contentStyle: {
                           paddingHorizontal: BASE_STYLES.horizontalPadding,

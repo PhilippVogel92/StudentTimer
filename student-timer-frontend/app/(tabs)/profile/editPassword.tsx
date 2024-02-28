@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, ScrollView } from "@/components/Themed";
+import { View } from "@/components/Themed";
 import Alert from "@/components/Alert";
 import { useRouter } from "expo-router";
 import { BASE_STYLES } from "@/constants/Theme";
@@ -12,6 +12,8 @@ import {
   validatePassword,
   comparePasswords,
 } from "@/components/auth/validationMethods";
+import { StyleSheet } from "react-native";
+import { toastShow, toastUpdate } from "@/components/Toast";
 
 export default function EditPassword() {
   const toast = useToast();
@@ -22,7 +24,6 @@ export default function EditPassword() {
   const [userPassword, setUserPassword] = useState("");
   const [userCheckPassword, setUserCheckPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const [, setError] = useState("");
   const { profilePictureName, getProfilePictureName } = useProfilePicture();
 
   useEffect(() => {
@@ -53,19 +54,18 @@ export default function EditPassword() {
 
   const changePassword = async () => {
     if (validateInput(userPassword, userCheckPassword)) {
-      const id = toast.show("Speichern...", { type: "loading" });
+      const id = toastShow(toast, "Speichern...", { type: "loading" });
       const result = await onChangePassword!(userPassword, userCheckPassword);
       if (result && result.error) {
-        setError(result.msg);
-        toast.update(id, result.msg, { type: "danger" });
+        toastUpdate(toast, id, result.msg, { type: "danger" });
       } else {
-        toast.update(id, "Passwort erfolgreich geändert", {
+        toastUpdate(toast, id, "Passwort erfolgreich geändert", {
           type: "success",
         });
         router.push("/profile/");
       }
     } else {
-      toast.show("Validierung fehlgeschlagen", { type: "warning" });
+      toastShow(toast, "Die Eingaben waren fehlerhaft", { type: "warning" });
     }
   };
 
@@ -83,7 +83,7 @@ export default function EditPassword() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
       <View style={{ alignItems: "center" }}>
         <ProfilePicture imageName={profilePictureName} />
       </View>
@@ -103,3 +103,12 @@ export default function EditPassword() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    justifyContent: "flex-start",
+    paddingVertical: BASE_STYLES.verticalPadding,
+    flex: 1,
+    gap: BASE_STYLES.gap,
+  },
+});

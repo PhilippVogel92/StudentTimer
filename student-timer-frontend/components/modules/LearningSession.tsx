@@ -17,8 +17,8 @@ import {
   formatTimeLearningSession,
 } from "@/libs/timeHelper";
 import StarRating from "@/components/StarRating";
-import { debounce, roundNumber, validateNumber } from "@/libs/generalHelper";
 import InputFieldNumeric from "../InputFieldNumeric";
+import { toastShow, toastUpdate } from "../Toast";
 
 export default function LearningSession(props: { isEdit: boolean }) {
   const { isEdit } = props;
@@ -42,12 +42,12 @@ export default function LearningSession(props: { isEdit: boolean }) {
     learningSession?.description || ""
   );
   const [focusDuration, setFocusDuration] = useState<{
-    hours: number | string;
-    mins: number | string;
+    hours: number;
+    mins: number;
   }>(msToTimeObject((learningSession?.focusDuration || 0) * (1000 * 60)));
   const [pauseDuration, setPauseDuration] = useState<{
-    hours: number | string;
-    mins: number | string;
+    hours: number;
+    mins: number;
   }>(
     msToTimeObject(
       ((learningSession?.totalDuration || 0) -
@@ -56,34 +56,73 @@ export default function LearningSession(props: { isEdit: boolean }) {
     )
   );
   const [changesMade, setChangesMade] = useState(false);
-  const [debounceWaiting, setDebounceWaiting] = useState(false);
-  const debounceDuration = React.useCallback(
-    debounce(
-      (
-        setState: React.Dispatch<
-          React.SetStateAction<{
-            hours: number | string;
-            mins: number | string;
-          }>
-        >,
-        val: string,
-        isHours: boolean
-      ) => {
-        const number = validateNumber(val, isHours ? 0 : 1);
-        setState((prevState) => ({
-          ...prevState,
-          [isHours ? "hours" : "mins"]: isHours
-            ? number
-            : number >= 60
-            ? 59
-            : number,
-        }));
-        setDebounceWaiting(false);
+  const [validInputs, setValidInputs] = useState({
+    focusDuration: {
+      hours: true,
+      mins: true,
+    },
+    pauseDuration: {
+      hours: true,
+      mins: true,
+    },
+  });
+
+  const validateInput = (
+    val: string,
+    currentState: {
+      hours: number;
+      mins: number;
+    },
+    setState: React.Dispatch<
+      React.SetStateAction<{
+        hours: number;
+        mins: number;
+      }>
+    >,
+    isFocusDuration: boolean,
+    isHours: boolean
+  ) => {
+    let key: keyof typeof validInputs = isFocusDuration
+        ? "focusDuration"
+        : "pauseDuration",
+      timeKey: keyof typeof currentState = isHours ? "hours" : "mins",
+      reverseTimeKey: keyof typeof currentState = isHours ? "mins" : "hours",
+      otherVal = currentState[reverseTimeKey],
+      number: number,
+      otherNumber: number,
+      valid = false,
+      otherValValid = false,
+      hoursMinsBothNotNull = true;
+
+    setState((prevState) => ({
+      ...prevState,
+      [timeKey]: val,
+    }));
+
+    number = val.match(/^\d+$/) === null ? -1 : Number(val);
+    otherNumber =
+      String(otherVal).match(/^\d+$/) === null ? -1 : Number(otherVal);
+    hoursMinsBothNotNull =
+      !isFocusDuration || number !== 0 || otherNumber !== 0;
+    valid =
+      Math.sign(number) >= 0 &&
+      (isHours ? true : number < 60) &&
+      hoursMinsBothNotNull;
+    otherValValid =
+      Math.sign(otherNumber) >= 0 &&
+      (isHours ? otherNumber < 60 : true) &&
+      hoursMinsBothNotNull;
+
+    setValidInputs((prevState) => ({
+      ...prevState,
+      [key]: {
+        ...prevState[key],
+        [timeKey]: valid,
+        [reverseTimeKey]: otherValValid,
       },
-      1000
-    ),
-    []
-  );
+    }));
+    setChangesMade(true);
+  };
 
   return (
     <KeyboardAvoidingView
@@ -117,31 +156,33 @@ export default function LearningSession(props: { isEdit: boolean }) {
                 style={styles.input}
                 value={focusDuration.hours.toString()}
                 onChangeText={(val) => {
-                  setFocusDuration((prevState) => ({
-                    ...prevState,
-                    hours: val,
-                  }));
-                  setChangesMade(true);
-                  setDebounceWaiting(true);
-                  debounceDuration(setFocusDuration, val, true);
+                  validateInput(
+                    val,
+                    focusDuration,
+                    setFocusDuration,
+                    true,
+                    true
+                  );
                 }}
                 inputUnit="Std."
                 selectTextOnFocus
+                showErrorBorder={!validInputs.focusDuration.hours}
               />
               <InputFieldNumeric
                 style={styles.input}
                 value={focusDuration.mins.toString()}
                 onChangeText={(val) => {
-                  setFocusDuration((prevState) => ({
-                    ...prevState,
-                    mins: val,
-                  }));
-                  setChangesMade(true);
-                  setDebounceWaiting(true);
-                  debounceDuration(setFocusDuration, val, false);
+                  validateInput(
+                    val,
+                    focusDuration,
+                    setFocusDuration,
+                    true,
+                    false
+                  );
                 }}
                 inputUnit="min."
                 selectTextOnFocus
+                showErrorBorder={!validInputs.focusDuration.mins}
               />
             </View>
           ) : (
@@ -158,31 +199,33 @@ export default function LearningSession(props: { isEdit: boolean }) {
                 style={styles.input}
                 value={pauseDuration.hours.toString()}
                 onChangeText={(val) => {
-                  setPauseDuration((prevState) => ({
-                    ...prevState,
-                    hours: val,
-                  }));
-                  setChangesMade(true);
-                  setDebounceWaiting(true);
-                  debounceDuration(setPauseDuration, val, true);
+                  validateInput(
+                    val,
+                    pauseDuration,
+                    setPauseDuration,
+                    false,
+                    true
+                  );
                 }}
                 inputUnit="Std."
                 selectTextOnFocus
+                showErrorBorder={!validInputs.pauseDuration.hours}
               />
               <InputFieldNumeric
                 style={styles.input}
                 value={pauseDuration.mins.toString()}
                 onChangeText={(val) => {
-                  setPauseDuration((prevState) => ({
-                    ...prevState,
-                    mins: val,
-                  }));
-                  setChangesMade(true);
-                  setDebounceWaiting(true);
-                  debounceDuration(setPauseDuration, val, false);
+                  validateInput(
+                    val,
+                    pauseDuration,
+                    setPauseDuration,
+                    false,
+                    false
+                  );
                 }}
                 inputUnit="min."
                 selectTextOnFocus
+                showErrorBorder={!validInputs.pauseDuration.mins}
               />
             </View>
           ) : (
@@ -236,8 +279,6 @@ export default function LearningSession(props: { isEdit: boolean }) {
                       discard: 1,
                     },
                   }),
-                cancelText: "Abbrechen",
-                confirmText: "Ja",
               });
             }}
           >
@@ -248,9 +289,15 @@ export default function LearningSession(props: { isEdit: boolean }) {
           text={isEdit ? "Speichern" : "Abschließen"}
           backgroundColor={module?.colorCode || ""}
           textColor="#FFFFFF"
-          disabled={isEdit ? debounceWaiting : false}
+          disabled={
+            isEdit
+              ? Object.values(validInputs.focusDuration)
+                  .concat(Object.values(validInputs.pauseDuration))
+                  .includes(false)
+              : false
+          }
           onPress={async () => {
-            let id = toast.show("Speichern...", { type: "loading" });
+            let id = toastShow(toast, "Speichern...", { type: "loading" });
             let body = {
               rating: starAmount,
               description: description,
@@ -280,9 +327,11 @@ export default function LearningSession(props: { isEdit: boolean }) {
                   }
                 );
               }
-              toast.update(id, "Erfolgreich gespeichert", { type: "success" });
+              toastUpdate(toast, id, "Erfolgreich gespeichert", {
+                type: "success",
+              });
             } catch (e) {
-              toast.update(id, `Fehler beim Speichern: ${e}`, {
+              toastUpdate(toast, id, `Fehler beim Speichern: ${e}`, {
                 type: "danger",
               });
             } finally {
@@ -341,14 +390,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   timeStats: {
-    gap: 20,
+    gap: BASE_STYLES.gap,
   },
   timeLabelContainer: {
     alignItems: "center",
-    gap: 10,
+    gap: BASE_STYLES.headingGap,
   },
   moduleContainer: {
-    gap: 5,
+    gap: BASE_STYLES.labelGap,
   },
   moduleLabel: {
     color: COLORTHEME.light.primary,
@@ -357,10 +406,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORTHEME.light.grey2,
-    borderRadius: 12,
-    height: 40,
-    paddingHorizontal: 10,
-    gap: 8,
+    borderRadius: BASE_STYLES.borderRadius,
+    height: BASE_STYLES.inputFieldHeight,
+    paddingHorizontal: BASE_STYLES.inputFieldHorizontalPadding,
+    gap: BASE_STYLES.wrapperGap,
   },
   colorCircle: {
     width: 16,
@@ -369,7 +418,7 @@ const styles = StyleSheet.create({
   },
   timeEdit: {
     flexDirection: "row",
-    gap: 10,
+    gap: BASE_STYLES.wrapperGap,
   },
   timeText: {
     fontSize: 20,
@@ -379,7 +428,7 @@ const styles = StyleSheet.create({
     flexBasis: "auto",
   },
   actions: {
-    gap: 10,
+    gap: BASE_STYLES.wrapperGap,
   },
   buttonBorder: {
     borderWidth: 3,
@@ -388,6 +437,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     textDecorationLine: "underline",
-    marginBottom: 20,
+    marginBottom: BASE_STYLES.horizontalPadding,
   },
 });

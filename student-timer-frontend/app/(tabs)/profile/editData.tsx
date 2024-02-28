@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, ScrollView } from "@/components/Themed";
+import { View } from "@/components/Themed";
 import Alert from "@/components/Alert";
 import { useRouter } from "expo-router";
 import { StyleSheet } from "react-native";
@@ -15,6 +15,7 @@ import {
   validateStudyCourse,
   validateEmail,
 } from "@/components/auth/validationMethods";
+import { toastShow, toastUpdate } from "@/components/Toast";
 
 export default function EditData() {
   const toast = useToast();
@@ -32,7 +33,6 @@ export default function EditData() {
   const [nameError, setNameError] = useState("");
   const [studyCourseError, setStudyCourseError] = useState("");
   const [emailError, setEmailError] = useState("");
-  const [, setError] = useState("");
 
   const { profilePictureName, getProfilePictureName } = useProfilePicture();
 
@@ -71,30 +71,33 @@ export default function EditData() {
 
   const update = async () => {
     if (validateInput()) {
-      const id = toast.show("Speichern...", { type: "loading" });
+      const id = toastShow(toast, "Speichern...", { type: "loading" });
       const result = await onUpdate!(userName, userStudyCourse, userEmail);
       if (result && result.error) {
-        setError(result.msg);
-        toast.update(id, result.msg, { type: "danger" });
+        if ((result.msg = "Email address already taken"))
+          toastUpdate(toast, id, "E-Mail bereits vergeben", { type: "danger" });
+        else {
+          toastUpdate(toast, id, result.msg, { type: "danger" });
+        }
       } else {
-        toast.update(id, "Profildaten erfolgreich gespeichert", {
+        toastUpdate(toast, id, "Profildaten erfolgreich gespeichert", {
           type: "success",
         });
         router.push("/profile/");
       }
     } else {
-      toast.show("Validierung fehlgeschlagen", { type: "warning" });
+      toastShow(toast, "Die Eingaben sind fehlerhaft", { type: "warning" });
     }
   };
 
   const removeUser = async () => {
-    let id = toast.show("Löschen...", { type: "loading" });
+    let id = toastShow(toast, "Löschen...", { type: "loading" });
     if (authState?.user.id) {
       const result = await onRemove!(authState?.user.id);
       if (result && result.error) {
-        setError(result.msg);
+        toastUpdate(toast, id, result.msg, { type: "danger" });
       } else {
-        toast.update(id, "Ihr Konto wurde erfolgreich gelöscht", {
+        toastUpdate(toast, id, "Ihr Konto wurde erfolgreich gelöscht", {
           type: "success",
         });
         router.push("/(auth)/signup");
@@ -159,7 +162,8 @@ export default function EditData() {
 const styles = StyleSheet.create({
   container: {
     justifyContent: "flex-start",
-    padding: BASE_STYLES.horizontalPadding,
+    paddingVertical: BASE_STYLES.verticalPadding,
+    gap: BASE_STYLES.gap,
     flex: 1,
   },
 });

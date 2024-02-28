@@ -4,13 +4,22 @@
   },
   "build": {
     "development": {
+      "extends": "production",
       "developmentClient": true,
       "distribution": "internal"
     },
     "preview": {
+      "extends": "production",
       "distribution": "internal"
     },
-    "production": {}
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://student-timer-backend.onrender.com"
+      },
+      "ios": {
+        "simulator": true
+      }
+    }
   },
   "submit": {
     "production": {}
